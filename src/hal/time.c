@@ -39,20 +39,21 @@ INTERRUPT(timer1_isr, T1_VECTOR) {
 }
 
 void sleep_for_minutes(uint16_t minutes) {
-    uint32_t total_ticks = (uint32_t)minutes * 15360UL; // 1 min ≈ 15.360 ticks a 32kHz/128
+    uint32_t total_ticks = (uint32_t)minutes * 15360UL; // 1 min ≈ 15.360 ticks a 32.768kHz/128
     uint32_t remaining_ticks = total_ticks;
 
     // Apagar Timer3 (ahorro)
     T3CTL = 0x00;
-    T3OVFIF = 0;               // limpiar flag previo
+    T3OVFIF = 0;
 
-    // Asegurar oscilador de 32 kHz activo
-    CLKCON |= 0x01;              // selecciona 32 kHz como fuente
-    while (!(CLKCON & 0x40));     // esperar a que esté estable
-
+    uint8_t old_clkcon = CLKCON; // Guardar configuración original del reloj
 
     while (remaining_ticks > 0) {
         uint16_t current_ticks = (remaining_ticks > 65535) ? 65535 : (uint16_t)remaining_ticks;
+
+        // Cambiar a oscilador de 32kHz RC para el ciclo de sueño.
+        // Se hace dentro del bucle porque CLKCON se resetea al despertar.
+        CLKCON = (CLKCON & ~0x0B) | 0x02; // CLKSRC=10 (32k), OSC32=0 (RC)
 
         // Configurar Timer1
         T1CTL = 0x0E;                // div 128, modo módulo
@@ -62,20 +63,24 @@ void sleep_for_minutes(uint16_t minutes) {
         T1CC0H = (uint8_t)(current_ticks >> 8);
         IRCON &= ~0x02;              // limpia flag previo
 
-        // Habilitar interrupciones globales
-        IEN0 |= 0x02;               // habilitar int Timer1
+        // Habilitar interrupciones
+        IEN0 |= 0x02;
         EA = 1;
 
         // Entrar en PM2
         SLEEP = 0x06;
-        PCON |= 0x01;                // sleep
+        PCON |= 0x01;
+        NOP(); // ¡Crucial para la sincronización del despertar!
+
+        // --- Punto de despertar ---
+        // La CPU se está ejecutando ahora con el oscilador RC de alta velocidad (~13MHz) por defecto.
 
         remaining_ticks -= current_ticks;
     }
 
-    // --- Al despertar ---
+    // --- Despertar final ---
     // Restaurar el reloj principal
-    CLKCON &= ~0x07;             // selecciona el oscilador principal
+    CLKCON = old_clkcon;
     while (!(CLKCON & 0x40));    // esperar a que esté estable
     time_init();                 // reactivar timer principal
 }
