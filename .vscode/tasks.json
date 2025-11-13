@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "clean",
+      "command": "make clean"
+    },
+    {
+      "type": "shell",
+      "label": "build",
+      "command": "make",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "shell",
+      "label": "flash",
+      "dependsOn": ["build"],
+      "command": "cd ../programmer && node -r ts-node/register src/index.ts ../firmware/firmware.hex /dev/ttyUSB1",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
