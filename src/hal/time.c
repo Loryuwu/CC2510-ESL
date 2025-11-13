@@ -70,8 +70,10 @@ void sleep_for_minutes(uint16_t minutes) {
         // Las interrupciones globales deben estar habilitadas para despertar del sueño
         EA = 1;
 
-        // Apagar el oscilador de cristal principal y entrar en Modo de Potencia 2
-        SLEEP |= 0x04; // SLEEP.OSC_PD = 1
+        // Entrar en Modo de Potencia 2 (PM2) apagando el oscilador principal.
+        // SLEEP.MODE = 2 (PM2), SLEEP.OSC_PD = 1 (Apagar oscilador de cristal)
+        // Esto corresponde al valor 0x06. Es una asignación directa, no un OR.
+        SLEEP = 0x06;
         PCON |= 0x01;
 
         // La hoja de datos requiere una secuencia específica para asegurar que el dispositivo

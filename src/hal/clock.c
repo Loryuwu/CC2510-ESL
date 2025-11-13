@@ -8,7 +8,6 @@ void init_clock(void) {
   }
   NOP();
 
-  // power down the unused oscillator
-  SLEEP |= 0x04;
- 
+  // El oscilador no utilizado (HS RCOSC) se apaga automáticamente al entrar en PM2.
+  // No es necesario modificar el registro SLEEP aquí.
 }
