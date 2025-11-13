@@ -39,39 +39,43 @@ INTERRUPT(timer1_isr, T1_VECTOR) {
 }
 
 void sleep_for_minutes(uint16_t minutes) {
-    uint32_t ticks = (uint32_t)minutes * 15360UL; // 1 min ≈ 15.360 ticks a 32kHz/128
-    if (ticks == 0) {
-        ticks = 256; // Si es 0, dormir por 1 segundo como mínimo
-    } else if (ticks > 65535) {
-        ticks = 65535; // Limitar al máximo de 16 bits
-    }
-
-    // Asegurar oscilador de 32 kHz activo
-    // CLKCON |= 0x01;              // selecciona 32 kHz como fuente
-    // while (!(CLKCON & 0x40));     // esperar a que esté estable
-
+    uint32_t total_ticks = (uint32_t)minutes * 15360UL; // 1 min ≈ 15.360 ticks a 32kHz/128
+    uint32_t remaining_ticks = total_ticks;
+    
     // Apagar Timer3 (ahorro)
     T3CTL = 0x00;
     T3OVFIF = 0;               // limpiar flag previo
 
-    // Configurar Timer1
-    T1CTL = 0x0E;                // div 128, modo módulo
-    T1CNTL = 0x00;
-    T1CCTL0 = 0x44;              // comparación + interrupción
-    T1CC0L = (uint8_t)(ticks & 0xFF);
-    T1CC0H = (uint8_t)(ticks >> 8);
-    IRCON &= ~0x02;              // limpia flag previo
+    // Asegurar oscilador de 32 kHz activo
+    CLKCON |= 0x01;              // selecciona 32 kHz como fuente
+    while (!(CLKCON & 0x40));     // esperar a que esté estable
 
-    // Habilitar interrupciones globales
-    IEN0  |= 0x02;               // habilitar int Timer1
-    EA = 1;
 
-    // Entrar en PM2
-    SLEEP = 0x06;
-    PCON |= 0x01;                // sleep
-    // NOP;
+    while (remaining_ticks > 0) {
+        uint16_t current_ticks = (remaining_ticks > 65535) ? 65535 : (uint16_t)remaining_ticks;
+
+        // Configurar Timer1
+        T1CTL = 0x0E;                // div 128, modo módulo
+        T1CNTL = 0x00;
+        T1CCTL0 = 0x44;              // comparación + interrupción
+        T1CC0L = (uint8_t)(current_ticks & 0xFF);
+        T1CC0H = (uint8_t)(current_ticks >> 8);
+        IRCON &= ~0x02;              // limpia flag previo
+
+        // Habilitar interrupciones globales
+        IEN0 |= 0x02;               // habilitar int Timer1
+        EA = 1;
+
+        // Entrar en PM2
+        SLEEP = 0x06;
+        PCON |= 0x01;                // sleep
+        
+        remaining_ticks -= current_ticks;
+    }
 
     // --- Al despertar ---
+    // Restaurar el reloj principal
+    CLKCON &= ~0x07;             // selecciona el oscilador principal
     while (!(CLKCON & 0x40));    // esperar a que esté estable
     time_init();                 // reactivar timer principal
 }

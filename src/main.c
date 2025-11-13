@@ -11,7 +11,6 @@
 
 #include "cobs/cobs.h"
 
-#include "rf/rf.h"
 
 
 void main(void) {
@@ -28,6 +27,17 @@ void main(void) {
   }
   delay_ms(500);
 
+/****************************
+ * 
+ *  Deep Sleep Test
+ * 
+ *****************************/
+
+  LED_B_ON;
+  delay_ms(1000);
+  LED_B_OFF;
+  sleep_for_minutes(1);
+  LED_G_ON;
 
 /****************************
  * 
@@ -36,16 +46,13 @@ void main(void) {
  *****************************/
 
   // epd_init();
+
   // LED_B_ON;
   // epd_clearDisplay();
   // sendIndexData( 0x10, image2, BUFFER_SIZE); // First frame
   // sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
   // flushDisplay();
-  // delay_ms(1000);
   // LED_B_OFF;
-  // sleep_for_minutes(0);
-  // sleep_test();
-  // LED_G_ON;
 
 
   // while (1)
@@ -66,18 +73,18 @@ void main(void) {
  *  Inicialización de RF
  * 
  *****************************/
-  delay_ms(500);
-  rf_init();
-  static __xdata uint8_t data[] = "Hola mundo desde RF!";
-  uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
-  // LED_R_OFF;
-  // LED_G_OFF;
-  // LED_B_OFF;
-  // LED_OFF;
-  for (uint8_t i = 0; i < 10; i++) {
-    LED_TOGGLE;
-    delay_ms(50);
-  } //Parpadeo significa exito en la inicialización RF
+  // delay_ms(500);
+  // rf_init();
+  // static __xdata uint8_t data[] = "Hola mundo desde RF!";
+  // uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
+  // // LED_R_OFF;
+  // // LED_G_OFF;
+  // // LED_B_OFF;
+  // // LED_OFF;
+  // for (uint8_t i = 0; i < 10; i++) {
+  //   LED_TOGGLE;
+  //   delay_ms(50);
+  // } //Parpadeo significa exito en la inicialización RF
 
 
   // while (1)
