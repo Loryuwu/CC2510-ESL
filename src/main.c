@@ -48,17 +48,17 @@ void main(void) {
   // LED_G_ON;
 
 
-  // while (1)
-  // {
-  // LED_B_ON;
-  // // PWR_ON;
-  // // sendIndexData( 0x10, image1, BUFFER_SIZE); // First frame
-  // // sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
-  // // flushDisplay();
-  // delay_ms(1000);
-  // LED_B_OFF;
-  // sleep_for_minutes(1);
-  // }
+  while (1)
+  {
+  LED_B_ON;
+  // PWR_ON;
+  // sendIndexData( 0x10, image1, BUFFER_SIZE); // First frame
+  // sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
+  // flushDisplay();
+  delay_ms(1000);
+  LED_B_OFF;
+  sleep_for_minutes(1);
+  }
   
 
 /****************************
