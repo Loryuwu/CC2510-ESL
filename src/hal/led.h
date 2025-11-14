@@ -1,6 +1,9 @@
 #ifndef _LED_H_
 #define _LED_H_
 
+#include "hal.h"
+#include <stdint.h>
+
 #define LED_BOOST_ON P2_2 = 1
 #define LED_BOOST_OFF P2_2 = 0
 
@@ -25,10 +28,12 @@
     P2DIR |= BV(1) | BV(2); \
     P1DIR |= BV(5) | BV(6) | BV(7); \
     LED_BOOST_ON;        \
-    LED_OFF;                \
+    LED_OFF;             \
     LED_R_OFF; \
     LED_B_OFF; \
     LED_G_OFF; \
   }
+
+void led_init();
 
 #endif /* _LED_H_ */

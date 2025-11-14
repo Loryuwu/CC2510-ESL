@@ -3,10 +3,12 @@
 
 #include "hal.h"
 #include <stdint.h>
+#include "clock.h"
 
 void time_init();
 uint32_t millis();
 void delay_ms(uint16_t millis);
-void sleep_for_minutes(uint16_t minutes);
+void wor_sleep_60s();
+void sleep_ms(uint32_t ms);
 
 #endif

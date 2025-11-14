@@ -36,9 +36,20 @@ void main(void) {
   LED_B_ON;
   delay_ms(1000);
   LED_B_OFF;
-  sleep_for_minutes(1);
-  LED_G_ON;
+  delay_ms(5000);
+  LED_B_ON;
+  delay_ms(100);
+  LED_B_OFF;
 
+  // sleep_for_minutes(1);
+  // sleep_ms(10000);
+  wor_sleep_60s();
+  LED_G_ON;
+  while (1)
+  {
+    delay_ms(100);
+  }
+  
 /****************************
  * 
  *  Inicialización de la pantalla EPD 

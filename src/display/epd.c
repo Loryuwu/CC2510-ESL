@@ -3,27 +3,6 @@
 #include "../hal/time.h"
 #include "../hal/led.h"
 
-// #define B_PWR 0   // P0_0
-// #define B_CS 1    // P0_1
-// #define B_DC 2    // P1_2 - low command, high data
-// #define B_BUSY 3  // P1_3 - low busy
-// #define B_RESET 0 // P2_0 - low reset
-
-// #define EPD_PWR P0_0
-// #define EPD_CS P0_1
-// #define EPD_DC P1_2
-// #define EPD_BUSY P1_3
-// #define EPD_RESET P2_0
-
-// #define PWR_ON EPD_PWR = 0
-// #define PWR_OFF EPD_PWR = 1
-// #define RESET_ON EPD_RESET = 0
-// #define RESET_OFF EPD_RESET = 1
-// #define EPD_SELECT EPD_CS = 0
-// #define EPD_DESELECT EPD_CS = 1
-// #define EPD_CMDMODE EPD_DC = 0
-// #define EPD_DATAMODE EPD_DC = 1
-
 // Define register_data array based on EPD_SIZE
 #if (EPD_SIZE == 213)
 const uint8_t register_data[] = { 0x00, 0x0e, 0x19, 0x02, 0xcf, 0x8d };	// other sizes
