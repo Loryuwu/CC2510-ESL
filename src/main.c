@@ -14,24 +14,24 @@
 
 
 void main(void) {
-  init_clock();
-  time_init();
-  //uart_init();
+  init_clock(); //Cambiar de oscillador interno a externo
+  time_init(); //Inicializa el timer para funciones de retardo y millis
+  //uart_init(); //Inicializa UART para debug
   
-  HAL_ENABLE_INTERRUPTS();
-  LED_INIT;
+  HAL_ENABLE_INTERRUPTS(); //Habilita interrupciones globales
+  LED_INIT; //Inicializa pines de los LEDs
 
   for (uint8_t i = 0; i < 10; i++) {
     LED_TOGGLE;
     delay_ms(50);
-  }
+  }  //Parpadeo significa exito en la inicialización del sistema
+
   delay_ms(500);
 
-/****************************
- * 
- *  Deep Sleep Test
- * 
- *****************************/
+////////////////////////////////
+//  Deep Sleep Test
+ #if 0 // Cambiar a 1 para activar el test de deep sleep
+////////////////////////////////
 
   LED_B_ON;
   delay_ms(1000);
@@ -49,41 +49,40 @@ void main(void) {
   {
     delay_ms(100);
   }
-  
-/****************************
- * 
- *  Inicialización de la pantalla EPD 
- * 
- *****************************/
-
-  // epd_init();
-
-  // LED_B_ON;
-  // epd_clearDisplay();
-  // sendIndexData( 0x10, image2, BUFFER_SIZE); // First frame
-  // sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
-  // flushDisplay();
-  // LED_B_OFF;
 
 
-  // while (1)
-  // {
-  // LED_B_ON;
-  // // PWR_ON;
-  // // sendIndexData( 0x10, image1, BUFFER_SIZE); // First frame
-  // // sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
-  // // flushDisplay();
-  // delay_ms(1000);
-  // LED_B_OFF;
-  // sleep_for_minutes(1);
-  // }
-  
+#endif
+////////////////////////////////
+//  Inicialización de la pantalla EPD 
+#if 1 // Cambiar a 1 para activar el test de pantalla EPD
+////////////////////////////////
 
-/****************************
- * 
- *  Inicialización de RF
- * 
- *****************************/
+  epd_init(); //Inicializa la pantalla EPD
+
+  LED_B_ON; //Enciende LED azul para indicar inicio de actualización de pantalla
+  epd_clearDisplay(); //Limpia la pantalla EPD
+  sendIndexData( 0x10, image2, BUFFER_SIZE); // First frame
+  sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
+  flushDisplay(); //Actualiza la pantalla EPD con los datos enviados
+  LED_B_OFF; //Apaga LED azul tras completar actualización de pantalla
+
+
+  while (1) {
+  LED_B_ON;
+  PWR_ON;
+  sendIndexData( 0x10, image1, BUFFER_SIZE); // First frame
+  sendColor( 0x13, 0x00, BUFFER_SIZE); // Second frame
+  flushDisplay();
+  delay_ms(1000);
+  LED_B_OFF;
+  }
+
+
+#endif
+////////////////////////////////
+//  Inicialización de RF
+// 
+////////////////////////////////
   // delay_ms(500);
   // rf_init();
   // static __xdata uint8_t data[] = "Hola mundo desde RF!";
@@ -96,7 +95,6 @@ void main(void) {
   //   LED_TOGGLE;
   //   delay_ms(50);
   // } //Parpadeo significa exito en la inicialización RF
-
 
   // while (1)
   // {
@@ -130,6 +128,9 @@ void main(void) {
   //   delay_ms(500);  // Pausa entre intentos
   // }
   
+//////////////////////////////////
+//  Inicialización de COBS
+//////////////////////////////////
   // CobsState __xdata cobsState;
   // cobs_init(&cobsState);
 
