@@ -17,7 +17,7 @@ Lista de herramientas necesarias:
   * SDCC utilizado para compilar proyecto en .hex listo para flashear, en este proyecto hay un "Makefile" que automatiza la compilacion, deberás instalar "Make"
 - Hardware asociado
     * Ahora, para flashear, necesitaras un CC-Debugger, hay metodos para utilizar un arduino nano o un esp32 como Debugger, pero personalmente recomiendo ahorrarse el dolor de cabeza que significa esto e ir por la apuesta segura, en Aliexpress se pueden encontrar a unos 10 Dolares, creeme que tu salud mental lo agradecerá.
-    ![Debuggerh](./img/ccdebugger.jpg) imagen referencial.
+    ![Debugger](./img/CCDebugger.jpg) imagen referencial.
 - Software:
     * SmartRF Studio (Recomendado)
         * Software entregado por texas instruments de manera gratuita para probar y configurar comunicación por RF sin necesidad de programar el chip, sirve para exportar todas las variables necesarias para la configuracion del modo RF del CC2510 o cualquier chip de la familia CCxxxx
