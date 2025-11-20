@@ -27,5 +27,7 @@ extern const unsigned char image_1[];
 #define image1      ((uint8_t *) & image_1)
 extern const unsigned char image_2[];
 #define image2       ((uint8_t *) & image_2)
+extern const unsigned char image_3[];
+#define image3       ((uint8_t *) & image_3)
 
 #endif // IMAGE_DATA_H
