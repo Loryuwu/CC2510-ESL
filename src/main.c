@@ -9,6 +9,9 @@
 
 #include "image_data/image.h"
 
+// #include "rf/rf.h"
+#include "rf/rf_control.h"
+
 #include "cobs/cobs.h"
 
 
@@ -27,6 +30,17 @@ void main(void) {
   }  //Parpadeo significa exito en la inicialización del sistema
 
   delay_ms(500);
+
+#if 0 //test display
+  LED_B_ON;
+  epd_init();
+  sendIndexData(0x10, image4 , BUFFER_SIZE);
+  sendColor(0x13, 0x00, BUFFER_SIZE);
+  flushDisplay();
+  LED_B_OFF;
+  powerOff();
+  while (1);
+#endif
 
 ////////////////////////////////
 //  Deep Sleep Test
@@ -56,10 +70,10 @@ void main(void) {
   LED_B_OFF;
   LED_G_OFF;
 
-#endif
+#endif //Sleep
 ////////////////////////////////
 //  Inicialización de la pantalla EPD 
-#if 1 // Cambiar a 1 para activar el test de pantalla EPD
+#if 0 // Cambiar a 1 para activar el test de pantalla EPD
 ////////////////////////////////
 
   // Variable para alternar entre imágenes. 
@@ -106,72 +120,64 @@ void main(void) {
   }
 
 
-#endif
+#endif //EPD
 ////////////////////////////////
 //  Inicialización de RF
-// 
+#if 1 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
-  // delay_ms(500);
+  delay_ms(500);
+  LED_B_ON;
+  rf_control_init();
   // rf_init();
-  // static __xdata uint8_t data[] = "Hola mundo desde RF!";
-  // uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
-  // // LED_R_OFF;
-  // // LED_G_OFF;
-  // // LED_B_OFF;
-  // // LED_OFF;
-  // for (uint8_t i = 0; i < 10; i++) {
-  //   LED_TOGGLE;
-  //   delay_ms(50);
-  // } //Parpadeo significa exito en la inicialización RF
+  uint8_t mis_datos[] = {0x01, 0x02, 0x03, 0x04};
+  static __xdata uint8_t data[] = "Hola mundo desde RF!";
+  uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
+  delay_ms(50);
+  LED_R_OFF;
+  LED_G_OFF;
+  LED_B_OFF;
+  LED_OFF;
+  for (uint8_t i = 0; i < 10; i++) {
+    LED_TOGGLE;
+    delay_ms(50);
+  } //Parpadeo significa exito en la inicialización RF
 
-  // while (1)
-  // {
-  //   if (rf_send_packet(data, data_length)) {
-  //     // Éxito: Parpadeo verde rápido
-  //     for(uint8_t i = 0; i < 3; i++) {
-  //       LED_G_ON;
-  //       delay_ms(100);
-  //       LED_G_OFF;
-  //       delay_ms(100);
-  //     }
-  //   } else {
-  //     // Error: Parpadeo rojo lento
-  //     for(uint8_t i = 0; i < 2; i++) {
-  //       LED_R_ON;
-  //       delay_ms(200);
-  //       LED_R_OFF;
-  //       delay_ms(200);
-  //     }
-  //   }
+  while (1)
+  {
+    LED_B_ON;
+    rf_control_send_packet(data, data_length); // Enviar 4 bytes
+    // rf_send_packet(data, data_length);
+    // Éxito: Parpadeo verde rápido
+    LED_B_OFF;
+    delay_ms(500);
+    for(uint8_t i = 0; i < 5; i++) {
+      LED_G_ON;
+      delay_ms(50);
+      LED_G_OFF;
+      delay_ms(50);
+    }
     
-  //   // Mostrar estado actual del radio
-  //   uint8_t state = MARCSTATE;
-  //   for(uint8_t i = 0; i < state; i++) {
-  //     LED_B_ON;
-  //     delay_ms(50);
-  //     LED_B_OFF;
-  //     delay_ms(50);
-  //   }
-    
-  //   delay_ms(500);  // Pausa entre intentos
-  // }
-  
+    delay_ms(1000);  // Pausa entre intentos
+  }
+#endif //RF
 //////////////////////////////////
 //  Inicialización de COBS
+#if 0 // Cambiar a 1 para activar el COBS
 //////////////////////////////////
-  // CobsState __xdata cobsState;
-  // cobs_init(&cobsState);
+  CobsState __xdata cobsState;
+  cobs_init(&cobsState);
 
-  // uint32_t __xdata next = 0;
-  // while (1) {
-  //   if (cobs_handle(&cobsState)) {
-  //     cobs_send(cobsState.packet, cobsState.packet_size);
-  //     LED_TOGGLE;
-  //   }
+  uint32_t __xdata next = 0;
+  while (1) {
+    if (cobs_handle(&cobsState)) {
+      cobs_send(cobsState.packet, cobsState.packet_size);
+      LED_TOGGLE;
+    }
 
-  //   if (millis() >= next) {
-  //     next += 1000;
-  //     LED_TOGGLE;
-  //   }
-  // }
+    if (millis() >= next) {
+      next += 1000;
+      LED_TOGGLE;
+    }
+  }
+#endif //COBS
 }

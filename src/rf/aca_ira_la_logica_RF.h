@@ -1,1 +1,0 @@
-//En algun momento implementaré esta funcionalidad

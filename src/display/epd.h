@@ -15,10 +15,10 @@
 #define EPD_BUSY P1_3
 #define EPD_RESET P2_0
 
-#define PWR_ON EPD_PWR = 0
-#define PWR_OFF EPD_PWR = 1
-#define RESET_ON EPD_RESET = 0
-#define RESET_OFF EPD_RESET = 1
+#define EPD_PWR_ON EPD_PWR = 0
+#define EPD_PWR_OFF EPD_PWR = 1
+#define EPD_RESET_ON EPD_RESET = 0
+#define EPD_RESET_OFF EPD_RESET = 1
 #define EPD_SELECT EPD_CS = 0
 #define EPD_DESELECT EPD_CS = 1
 #define EPD_CMDMODE EPD_DC = 0

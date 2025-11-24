@@ -22,13 +22,13 @@ void inline epd_waitBusy() {
 void epdReset(uint32_t ms1, uint32_t ms2, uint32_t ms3, uint32_t ms4, uint32_t ms5)
 {
   delay_ms(ms1);
-  RESET_ON;
+  EPD_RESET_ON;
   delay_ms(ms2);
-  RESET_OFF;
+  EPD_RESET_OFF;
   delay_ms(ms3);
-  RESET_ON;
+  EPD_RESET_ON;
   delay_ms(ms4);
-  RESET_OFF;
+  EPD_RESET_OFF;
   delay_ms(ms5);
 }
 
@@ -51,7 +51,7 @@ void epd_init() {
   P1DIR &= ~BV(B_BUSY);
   P2DIR |= BV(B_RESET);
 
-  PWR_ON;
+  EPD_PWR_ON;
   
   delay_ms(5);
   epdReset(1, 5, 10, 5, 1);
@@ -111,25 +111,32 @@ void sendColor( uint8_t index, const uint8_t data, uint32_t len )
 void flushDisplay()
 {
   DCDC_powerOn();
-  sendIndexData( 0x12, &register_data[0], 1 );	//Display Refresh
+  // sendIndexData( 0x12, &register_data[0], 1 );	//Display Refresh
+  sendIndexData( 0x11, &register_data[0], 1 );	//Display Refresh
   epd_waitBusy();
+  DCDC_powerOff();
 }
 
 void DCDC_powerOn()
 {
-  sendIndexData( 0x04, &register_data[0], 1 );  //Power on
+  sendIndexData( 0x04, &register_data[0], 1 );  //Power on DC/DC
+  epd_waitBusy();
+}
+
+void DCDC_powerOff()
+{
+  sendIndexData( 0x02, &register_data[0], 0 );  //Turn off DC/DC
   epd_waitBusy();
 }
 
 void powerOff()
 {
-	sendIndexData( 0x02, &register_data[0], 0 );  //Turn off DC/DC
-	epd_waitBusy();
+  DCDC_powerOff();
   EPD_CMDMODE;
   EPD_SELECT;
   delay_ms(150);
-  RESET_OFF;
-  PWR_OFF;
+  EPD_RESET_OFF;
+  EPD_PWR_OFF;
 }
 
 void inline sendData(uint8_t data) {
