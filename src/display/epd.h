@@ -46,13 +46,14 @@ extern const uint8_t register_data[];
 void epd_waitBusy();
 void epd_init();
 void epd_clearDisplay();
-void globalUpdate(const uint8_t * data1s, const uint8_t * data2s);
-void sendIndexData( uint8_t index, const uint8_t *data, uint32_t len );
-void sendColor( uint8_t index, const uint8_t data, uint32_t len );
-void flushDisplay();
-void DCDC_powerOn();
-void powerOff();
-void sendCommand(uint8_t cmd);
-void sendData(uint8_t data);
+void epd_globalUpdate(const uint8_t * data1s, const uint8_t * data2s);
+void epd_sendIndexData( uint8_t index, const uint8_t *data, uint32_t len );
+void epd_sendColor( uint8_t index, const uint8_t data, uint32_t len );
+void epd_flushDisplay();
+void epd_DCDC_powerOn();
+void epd_powerOn();
+void epd_powerOff();
+void epd_sendCommand(uint8_t cmd);
+void epd_sendData(uint8_t data);
 
 #endif

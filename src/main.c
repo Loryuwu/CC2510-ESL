@@ -33,11 +33,11 @@ void main(void) {
 #if 0 //test display
   LED_B_ON;
   epd_init();
-  sendIndexData(0x10, image4 , BUFFER_SIZE);
-  sendColor(0x13, 0x00, BUFFER_SIZE);
-  flushDisplay();
+  epd_sendIndexData(0x10, image4 , BUFFER_SIZE);
+  epd_sendColor(0x13, 0x00, BUFFER_SIZE);
+  epd_flushDisplay();
   LED_B_OFF;
-  powerOff();
+  epd_powerOff();
   while (1);
 #endif
 
@@ -88,24 +88,24 @@ void main(void) {
     // 2. Actualizar buffer según la imagen actual
     switch (current_image) {
         case 0:
-            sendIndexData(0x10, image1, BUFFER_SIZE);
-            sendColor(0x13, 0x00, BUFFER_SIZE); // Asumiendo que image1 es B/N y el canal rojo va vacío
+            epd_sendIndexData(0x10, image1, BUFFER_SIZE);
+            epd_sendColor(0x13, 0x00, BUFFER_SIZE); // Asumiendo que image1 es B/N y el canal rojo va vacío
             break;
         case 1:
-            sendIndexData(0x10, image2, BUFFER_SIZE);
-            sendColor(0x13, 0x00, BUFFER_SIZE);
+            epd_sendIndexData(0x10, image2, BUFFER_SIZE);
+            epd_sendColor(0x13, 0x00, BUFFER_SIZE);
             break;
         case 2:
-            sendIndexData(0x10, image3, BUFFER_SIZE);
-            sendColor(0x13, 0x00, BUFFER_SIZE);
+            epd_sendIndexData(0x10, image3, BUFFER_SIZE);
+            epd_sendColor(0x13, 0x00, BUFFER_SIZE);
             break;
     }
 
     // 3. Refrescar pantalla
-    flushDisplay();
+    epd_flushDisplay();
     LED_B_OFF;
     // 4. Apagar pantalla (Deep Sleep del EPD)
-    powerOff();
+    epd_powerOff();
 
     // 5. Alternar imagen para la próxima vez
     current_image += 1;
@@ -114,21 +114,21 @@ void main(void) {
     }
 
     // 6. Dormir el MCU por x horas (en alguna parte hay un error, pero 1 segundo equivale a medio minuto realmente)
-    deep_sleep_seconds(120*6); //120 equivale a 1 hora, multiplicamos por x cantidad de horas (en este caso 6)
-    // delay_ms(10000);
+    // deep_sleep_seconds(120*6); //120 equivale a 1 hora, multiplicamos por x cantidad de horas (en este caso 6)
+    delay_ms(5000);
   }
 
 
 #endif //EPD
 ////////////////////////////////
 //  Inicialización de RF TX
-#if 1 // Cambiar a 1 para activar el test de RF
+#if 0 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
   delay_ms(500);
   LED_B_ON;
   rf_init();
   
-  static __xdata uint8_t data[] = "Hola mundo desde RF!";
+  static __xdata uint8_t data[] = "\nHola mundo desde RF!\n¿Como esta el mundo?";
   uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
   delay_ms(50);
   LED_R_OFF;
@@ -163,35 +163,54 @@ void main(void) {
 #if 1 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
   rf_init();
+  epd_init(); 
   
   // Buffer para datos recibidos
   static __xdata uint8_t rx_buffer[64];
   
   // Parpadeo para indicar inicio
   for (uint8_t i = 0; i < 5; i++) {
-      LED_B_ON;
-      delay_ms(50);
-      LED_B_OFF;
-      delay_ms(50);
+    LED_B_ON;
+    delay_ms(50);
+    LED_B_OFF;
+    delay_ms(50);
   }
 
   while (1) {
-      // Intentar recibir un paquete
-      uint8_t len = rf_receive_packet(rx_buffer, 63);
-      
-      if (len > 0) {
-          // Verificar si el paquete comienza con "LED"
-          if (len >= 3 && rx_buffer[0] == 'L' && rx_buffer[1] == 'E' && rx_buffer[2] == 'D') {
-              LED_G_ON;  // Si datos recividos comienza con "LED" Encender LED verde
-              delay_ms(5000);
-              LED_G_OFF;
-          }
-          else {
-              LED_R_ON;  // Si datos recividos no comienza con "LED" Encender LED rojo
-              delay_ms(5000);
-              LED_R_OFF;
-          }
+    // Intentar recibir un paquete
+    uint8_t len = rf_receive_packet(rx_buffer, 63);
+    
+    if (len > 0) {
+      // Verificar si el paquete comienza con "LED"
+      if (len >= 3 && rx_buffer[0] == 'L' && rx_buffer[1] == 'E' && rx_buffer[2] == 'D') {
+        epd_powerOn();
+        if (rx_buffer[4] == 'R') {
+          LED_R_ON;
+          epd_sendIndexData(0x10, image1, BUFFER_SIZE);
+          epd_sendColor(0x13, 0x00, BUFFER_SIZE);
+          LED_R_OFF;
+        } else if (rx_buffer[4] == 'G') {
+          LED_G_ON;
+          epd_sendIndexData(0x10, image2, BUFFER_SIZE);
+          epd_sendColor(0x13, 0x00, BUFFER_SIZE);
+          LED_G_OFF;
+        } else if (rx_buffer[4] == 'B')  {
+          LED_B_ON;
+          epd_sendIndexData(0x10, image3, BUFFER_SIZE);
+          epd_sendColor(0x13, 0x00, BUFFER_SIZE);
+          LED_B_OFF;
+        }
+        epd_flushDisplay();
+        epd_powerOff();
+      } else {
+        for (uint8_t i = 0; i < 5; i++) {
+          LED_R_ON;
+          delay_ms(50);
+          LED_R_OFF;
+          delay_ms(50);
+        }
       }
+    }
   }
 #endif //RF RX
 //////////////////////////////////

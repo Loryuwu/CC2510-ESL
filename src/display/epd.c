@@ -19,7 +19,7 @@ void inline epd_waitBusy() {
   delay_ms(200);
 }
 
-void epdReset(uint32_t ms1, uint32_t ms2, uint32_t ms3, uint32_t ms4, uint32_t ms5)
+void epd_reset(uint32_t ms1, uint32_t ms2, uint32_t ms3, uint32_t ms4, uint32_t ms5)
 {
   delay_ms(ms1);
   EPD_RESET_ON;
@@ -32,9 +32,9 @@ void epdReset(uint32_t ms1, uint32_t ms2, uint32_t ms3, uint32_t ms4, uint32_t m
   delay_ms(ms5);
 }
 
-void softReset()
+void epd_softReset()
 {
-  sendIndexData( 0x00, &register_data[1], 1);
+  epd_sendIndexData( 0x00, &register_data[1], 1);
   epd_waitBusy();
 }
 
@@ -54,36 +54,36 @@ void epd_init() {
   EPD_PWR_ON;
   
   delay_ms(5);
-  epdReset(1, 5, 10, 5, 1);
+  epd_reset(1, 5, 10, 5, 1);
   epd_waitBusy();
-  softReset();
+  epd_softReset();
 
-  sendIndexData( 0xe5, &register_data[2], 1 );  //Input Temperature: 25C
-	sendIndexData( 0xe0, &register_data[3], 1 );  //Active Temperature
-	sendIndexData( 0x00, &register_data[4], 2 );  //PSR
+  epd_sendIndexData( 0xe5, &register_data[2], 1 );  //Input Temperature: 25C
+	epd_sendIndexData( 0xe0, &register_data[3], 1 );  //Active Temperature
+	epd_sendIndexData( 0x00, &register_data[4], 2 );  //PSR
 
 }
 
 void epd_clearDisplay() {
-  sendColor(0x10, 0x00, BUFFER_SIZE);
-	sendColor(0x13, 0x00, BUFFER_SIZE);
-  flushDisplay();
+  epd_sendColor(0x10, 0x00, BUFFER_SIZE);
+  epd_sendColor(0x13, 0x00, BUFFER_SIZE);
+  epd_flushDisplay();
 }
 
-void globalUpdate(const uint8_t * data1s, const uint8_t * data2s)
+void epd_globalUpdate(const uint8_t * data1s, const uint8_t * data2s)
 {
   // send first frame
-  sendIndexData(0x10, data1s, BUFFER_SIZE); // First frame
+  epd_sendIndexData(0x10, data1s, BUFFER_SIZE); // First frame
 
   // send second frame
-  sendIndexData(0x13, data2s, BUFFER_SIZE); // Second frame
+  epd_sendIndexData(0x13, data2s, BUFFER_SIZE); // Second frame
 
-  flushDisplay();
+  epd_flushDisplay();
 }
 
-void sendIndexData( uint8_t index, const uint8_t *data, uint32_t len )
+void epd_sendIndexData( uint8_t index, const uint8_t *data, uint32_t len )
 {	
-  sendCommand(index);
+  epd_sendCommand(index);
   EPD_DATAMODE;
   EPD_SELECT;
   for ( uint32_t i = 0; i < len; i++){
@@ -95,9 +95,9 @@ void sendIndexData( uint8_t index, const uint8_t *data, uint32_t len )
 
 }
 
-void sendColor( uint8_t index, const uint8_t data, uint32_t len )
+void epd_sendColor( uint8_t index, const uint8_t data, uint32_t len )
 {	
-  sendCommand(index);
+  epd_sendCommand(index);
   EPD_DATAMODE;
   EPD_SELECT;
   for ( uint32_t i = 0; i < len; i++){
@@ -108,30 +108,38 @@ void sendColor( uint8_t index, const uint8_t data, uint32_t len )
   EPD_DESELECT;
 }
 
-void flushDisplay()
+void epd_flushDisplay()
 {
-  DCDC_powerOn();
+  epd_DCDC_powerOn();
   // sendIndexData( 0x12, &register_data[0], 1 );	//Display Refresh
-  sendIndexData( 0x11, &register_data[0], 1 );	//Display Refresh
+  epd_sendIndexData( 0x11, &register_data[0], 1 );	//Display Refresh
   epd_waitBusy();
-  DCDC_powerOff();
+  epd_DCDC_powerOff();
 }
 
-void DCDC_powerOn()
+void epd_DCDC_powerOn()
 {
-  sendIndexData( 0x04, &register_data[0], 1 );  //Power on DC/DC
-  epd_waitBusy();
-}
-
-void DCDC_powerOff()
-{
-  sendIndexData( 0x02, &register_data[0], 0 );  //Turn off DC/DC
+  epd_sendIndexData( 0x04, &register_data[0], 1 );  //Power on DC/DC
   epd_waitBusy();
 }
 
-void powerOff()
+void epd_DCDC_powerOff()
 {
-  DCDC_powerOff();
+  epd_sendIndexData( 0x02, &register_data[0], 0 );  //Turn off DC/DC
+  epd_waitBusy();
+}
+
+void epd_powerOn()
+{
+  // epd_DCDC_powerOn();
+  EPD_SELECT;
+  // delay_ms(150);
+  EPD_PWR_ON;
+}
+
+void epd_powerOff()
+{
+  epd_DCDC_powerOff();
   EPD_CMDMODE;
   EPD_SELECT;
   delay_ms(150);
@@ -139,7 +147,7 @@ void powerOff()
   EPD_PWR_OFF;
 }
 
-void inline sendData(uint8_t data) {
+void epd_sendData(uint8_t data) {
   EPD_DATAMODE;
   EPD_SELECT;
   U0DBUF = data;
@@ -148,7 +156,7 @@ void inline sendData(uint8_t data) {
   EPD_DESELECT;
 }
 
-void inline sendCommand(uint8_t cmd) {
+void epd_sendCommand(uint8_t cmd) {
   EPD_CMDMODE;
   EPD_SELECT;
   U0DBUF = cmd;
