@@ -2,7 +2,7 @@
 ![ESLs](./img/ESLs.jpg)
 
 Este es un proyecto para el control de estos tags Epaper de 2,2" o 4,2" (tambien hay algunos 2,6 que traen este MCU, pero no todos)
-Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8052 + transceptor de RF a 2,4GhZ
+Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8051 + transceptor de RF a 2,4GhZ
 
 ## ✨ Documentación
 - [CC2510 - MCU + radio - 8051](../../raw/master/doc/cc2510.pdf) - Corazon del proyecto.

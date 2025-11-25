@@ -37,12 +37,6 @@ uint8_t datos[] = "Hola Mundo";
 rf_send_packet(datos, sizeof(datos) - 1); // Enviar sin el caracter nulo
 ```
 
-**Funcionamiento interno:**
-1.  Pone el radio en modo IDLE.
-2.  Escribe la longitud del paquete y los datos en el registro `RFD` (FIFO de TX).
-3.  Envía el comando `STX` para iniciar la transmisión.
-4.  Espera a que el estado del radio (`MARCSTATE`) vuelva a IDLE.
-5.  Limpia la bandera de interrupción `IRQ_DONE`.
 
 ### 3. Recibir Paquetes
 Para recibir datos, utiliza `rf_receive_packet`. Esta función verifica si ha llegado un paquete completo.

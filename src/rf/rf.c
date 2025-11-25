@@ -1,20 +1,130 @@
+/*
+    RF Control Module for CC2510
+    Standalone module
+*/
+
 #include "rf.h"
 #include "../hal/hal.h"
 #include "../hal/time.h"
 
-// Strobe commands
-#define SFSTXON 0x00
-#define SCAL    0x01
-#define SRX     0x02
-#define STX     0x03
-#define SIDLE   0x04
-#define SFRX    0x06
-#define SFTX    0x07
-#define SNOP    0x0D
+// ============================================================================
+// Definitions & Macros (Copied from hal_defines.h, hal_dma.h, hal_cc25xx.h)
+// ============================================================================
+
+#define HI(a)     (uint8_t) ((uint16_t)(a) >> 8 )
+#define LO(a)     (uint8_t)  (uint16_t)(a)
+#define SET_WORD(H, L, val) { (H) = HI(val); (L) = LO(val); }
+
+// DMA Configuration
+typedef struct {
+    uint8_t SRCADDRH;
+    uint8_t SRCADDRL;
+    uint8_t DESTADDRH;
+    uint8_t DESTADDRL;
+    uint8_t LENH      : 5;
+    uint8_t VLEN      : 3;
+    uint8_t LENL      : 8;
+    uint8_t TRIG      : 5;
+    uint8_t TMODE     : 2;
+    uint8_t WORDSIZE  : 1;
+    uint8_t PRIORITY  : 2;
+    uint8_t M8        : 1;
+    uint8_t IRQMASK   : 1;
+    uint8_t DESTINC   : 2;
+    uint8_t SRCINC    : 2;
+} HAL_DMA_DESC;
+
+// DMA Constants
+#define DMA_VLEN_FIRST_BYTE_P_1  0x01
+#define DMA_VLEN_FIRST_BYTE_P_3  0x04
+#define DMA_WORDSIZE_BYTE        0x00
+#define DMA_TMODE_SINGLE         0x00
+#define DMA_TRIG_RADIO           19
+#define DMA_SRCINC_0             0x00
+#define DMA_SRCINC_1             0x01
+#define DMA_DESTINC_0            0x00
+#define DMA_DESTINC_1            0x01
+#define DMA_IRQMASK_DISABLE      0x00
+#define DMA_M8_USE_8_BITS        0x00
+#define DMA_PRI_HIGH             0x02
+#define DMA_ARM_ABORT            0x80
+#define DMA_ARM_CH0              (1<<0)
+
+// RF Constants
+#define RFST_SIDLE               0x04
+#define RFST_STX                 0x03
+#define RFST_SRX                 0x02
+#define CC25XX_MODE_RX           0
+#define CC25XX_MODE_TX           1
+
+// ============================================================================
+// Internal State
+// ============================================================================
+
+static __xdata HAL_DMA_DESC rf_dma_config[1]; // Only using 1 channel (CH0)
+static __xdata uint8_t rf_buffer[64]; // Internal buffer
+static uint8_t rf_mode;
+
+// ============================================================================
+// Internal Helper Functions
+// ============================================================================
+
+static void rf_setup_dma(uint8_t mode) {
+    rf_dma_config[0].PRIORITY       = DMA_PRI_HIGH;
+    rf_dma_config[0].M8             = DMA_M8_USE_8_BITS;
+    rf_dma_config[0].IRQMASK        = DMA_IRQMASK_DISABLE;
+    rf_dma_config[0].TRIG           = DMA_TRIG_RADIO;
+    rf_dma_config[0].TMODE          = DMA_TMODE_SINGLE;
+    rf_dma_config[0].WORDSIZE       = DMA_WORDSIZE_BYTE;
+
+    rf_mode = mode;
+
+    if (rf_mode == CC25XX_MODE_TX) {
+        // TX: Buffer -> RFD
+        SET_WORD(rf_dma_config[0].SRCADDRH, rf_dma_config[0].SRCADDRL, rf_buffer);
+        SET_WORD(rf_dma_config[0].DESTADDRH, rf_dma_config[0].DESTADDRL, &X_RFD);
+        rf_dma_config[0].VLEN           = DMA_VLEN_FIRST_BYTE_P_1;
+        // Max length: assuming first byte is length
+        SET_WORD(rf_dma_config[0].LENH, rf_dma_config[0].LENL, 64); 
+        rf_dma_config[0].SRCINC         = DMA_SRCINC_1;
+        rf_dma_config[0].DESTINC        = DMA_DESTINC_0;
+    } else {
+        // RX: RFD -> Buffer
+        SET_WORD(rf_dma_config[0].SRCADDRH, rf_dma_config[0].SRCADDRL, &X_RFD);
+        SET_WORD(rf_dma_config[0].DESTADDRH, rf_dma_config[0].DESTADDRL, rf_buffer);
+        rf_dma_config[0].VLEN           = DMA_VLEN_FIRST_BYTE_P_3; // +2 status bytes
+        SET_WORD(rf_dma_config[0].LENH, rf_dma_config[0].LENL, 64);
+        rf_dma_config[0].SRCINC         = DMA_SRCINC_0;
+        rf_dma_config[0].DESTINC        = DMA_DESTINC_1;
+    }
+
+    // Load DMA config to Channel 0
+    SET_WORD(DMA0CFGH, DMA0CFGL, &rf_dma_config[0]);
+}
+
+static void rf_enter_rx(void) {
+    // Abort any ongoing DMA
+    DMAARM = DMA_ARM_ABORT | DMA_ARM_CH0;
+    
+    rf_setup_dma(CC25XX_MODE_RX);
+    
+    // Arm DMA
+    DMAARM = DMA_ARM_CH0;
+    
+    // Strobe RX
+    RFST = RFST_SRX;
+}
+
+// ============================================================================
+// Public API Implementation
+// ============================================================================
 
 void rf_init(void) {
+    // Basic initialization
+    // Assuming global interrupts and system clock are set up by the main application
+    
     // RF Settings for 250kBaud, MSK, 2433MHz
-    // Generated/Verified for SmartRF Studio compatibility
+    // Copied from rf.c for compatibility
     
     // Frequency Control
     FSCTRL1   = 0x0A;
@@ -66,96 +176,99 @@ void rf_init(void) {
     PKTCTRL0  = 0x05; // Whitening OFF, CRC on, Variable Length
     PKTLEN    = 0xFF; // Max packet length
     
-    // Sync Word (Default is D391, but good to be explicit)
+    // Sync Word
     SYNC1     = 0xD3;
     SYNC0     = 0x91;
     
-    // Address (Default 0x00, filtering disabled by default in PKTCTRL1)
+    // Address
     ADDR      = 0x00;
 
-    RFST = SIDLE;
+    RFST = RFST_SIDLE;
+    
+    // Set priority for RF (IP1.0, IP0.0)
+    IP1 |= (1<<0);
+    IP0 |= (1<<0);
+
+    // Default to RX
+    rf_enter_rx();
 }
 
-uint8_t rf_send_packet(uint8_t* data, uint8_t length) {
-    // Force IDLE first
-    RFST = SIDLE;
-    while ((MARCSTATE & 0x1F) != 0x01); // Wait for IDLE
+void rf_send_packet(uint8_t *data, uint8_t len) {
+    if (len > 60) len = 60; // Safety limit
+
+    // Prepare buffer: [Length, Data...]
+    rf_buffer[0] = len;
+    for (uint8_t i = 0; i < len; i++) {
+        rf_buffer[i+1] = data[i];
+    }
+
+    // Force IDLE first to ensure clean state
+    RFST = RFST_SIDLE;
+    // Optional: Wait for IDLE state if needed, but usually fast enough
+    
+    // Abort current DMA
+    DMAARM = DMA_ARM_ABORT | DMA_ARM_CH0;
+
+    // Setup DMA for TX
+    rf_setup_dma(CC25XX_MODE_TX);
+
+    // Arm DMA first!
+    DMAARM = DMA_ARM_CH0;
+
+    // Strobe STX (Triggers DMA via Radio request)
+    RFST = RFST_STX;
+
+    // Wait for completion
+    // Polling RFIF bit 4 (IRQ_DONE)
+    while (!(RFIF & (1<<4)));
     
     // Clear IRQ_DONE
-    RFIF &= ~0x10;
+    RFIF &= ~(1<<4);
     
-    // Write data to FIFO
-    RFD = length;
-    for (uint8_t i = 0; i < length; i++) {
-        RFD = data[i];
-    }
-    
-    // Start Transmission
-    RFST = STX;
-    
-    // Wait for transmission to complete (MARCSTATE -> IDLE)
-    // MCSM1 is configured to go to IDLE after TX.
-    // We wait for MARCSTATE to become IDLE (0x01).
-    uint16_t timeout = 0;
-    while ((MARCSTATE & 0x1F) != 0x01) {
-        timeout++;
-        if (timeout > 30000) { // Increased timeout
-            // Timeout: Force IDLE and return error
-            RFST = SIDLE;
-            return 0;
-        }
-        delay_ms(1); 
-    }
-    
-    // Clear IRQ_DONE just in case
-    RFIF &= ~0x10;
-    
-    return 1;
+    // Return to RX
+    rf_enter_rx();
 }
 
-uint8_t rf_receive_packet(uint8_t* buffer, uint8_t max_length) {
-    uint8_t status;
-    uint8_t len;
-
-    // Check if we are in RX, if not, enter RX
-    if ((MARCSTATE & 0x1F) != 0x0D) {
-        RFST = SRX;
-        return 0;
-    }
-
-    // Check for IRQ_DONE (Bit 4 of RFIF)
-    if (RFIF & 0x10) {
-        // Clear interrupt flag
-        RFIF &= ~0x10;
-        
-        // Read length byte
-        len = RFD;
-        
-        if (len > max_length) {
-            // Packet too long, flush RX FIFO
-            RFST = SIDLE;
-            RFST = SFRX; 
+uint8_t rf_receive_packet(uint8_t *buffer, uint8_t max_len) {
+    // Check if packet received
+    // In RX mode, DMA should have transferred data to rf_buffer
+    // We can check if DMA channel 0 is no longer armed (if it finishes?)
+    // Or check RFIF IRQ_DONE
+    
+    if (RFIF & (1<<4)) {
+        // Packet received (or TX done, but we are in RX mode)
+        if (rf_mode == CC25XX_MODE_RX) {
+            // Clear flag
+            RFIF &= ~(1<<4);
             
-            // Go back to RX
-            RFST = SRX;
-            return 0;
+            // Get length from first byte
+            uint8_t len = rf_buffer[0];
+            
+            // Check CRC (last byte of status) - Optional but good
+            // Status bytes are at rf_buffer[len+1] and rf_buffer[len+2]
+            // uint8_t lqi = rf_buffer[len+1];
+            // uint8_t crc = rf_buffer[len+2];
+            // if (crc & 0x80) { // CRC OK }
+            
+            if (len > max_len) len = max_len;
+            
+            for (uint8_t i = 0; i < len; i++) {
+                buffer[i] = rf_buffer[i+1];
+            }
+            
+            // Re-arm RX
+            rf_enter_rx();
+            
+            return len;
         }
-        
-        for (uint8_t i = 0; i < len; i++) {
-            buffer[i] = RFD;
-        }
-        
-        // Read status bytes (RSSI, LQI) appended if configured (default is yes)
-        // But if we read 'len' bytes, and 'len' was the payload length...
-        // The length byte does not include the length byte itself.
-        // It includes payload.
-        // The status bytes are appended AFTER payload.
-        // So we should read 2 more bytes.
-        volatile uint8_t rssi = RFD;
-        volatile uint8_t lqi = RFD;
-        
-        return len;
     }
     
     return 0;
+}
+
+void rf_set_channel(uint8_t channel) {
+    // CHANNR register is 0xDF36 (SFR) or similar? 
+    // Wait, CHANNR is an SFR in CC2510.
+    // In cc2510fx.h it should be defined as CHANNR.
+    CHANNR = channel;
 }

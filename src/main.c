@@ -9,8 +9,7 @@
 
 #include "image_data/image.h"
 
-// #include "rf/rf.h"
-#include "rf/rf_control.h"
+#include "rf/rf.h"
 
 #include "cobs/cobs.h"
 
@@ -122,14 +121,13 @@ void main(void) {
 
 #endif //EPD
 ////////////////////////////////
-//  Inicialización de RF
+//  Inicialización de RF TX
 #if 1 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
   delay_ms(500);
   LED_B_ON;
-  rf_control_init();
-  // rf_init();
-  uint8_t mis_datos[] = {0x01, 0x02, 0x03, 0x04};
+  rf_init();
+  
   static __xdata uint8_t data[] = "Hola mundo desde RF!";
   uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
   delay_ms(50);
@@ -137,6 +135,7 @@ void main(void) {
   LED_G_OFF;
   LED_B_OFF;
   LED_OFF;
+  
   for (uint8_t i = 0; i < 10; i++) {
     LED_TOGGLE;
     delay_ms(50);
@@ -145,11 +144,10 @@ void main(void) {
   while (1)
   {
     LED_B_ON;
-    rf_control_send_packet(data, data_length); // Enviar 4 bytes
-    // rf_send_packet(data, data_length);
-    // Éxito: Parpadeo verde rápido
+    rf_send_packet(data, data_length);
     LED_B_OFF;
     delay_ms(500);
+    
     for(uint8_t i = 0; i < 5; i++) {
       LED_G_ON;
       delay_ms(50);
@@ -159,7 +157,43 @@ void main(void) {
     
     delay_ms(1000);  // Pausa entre intentos
   }
-#endif //RF
+#endif //RF TX
+////////////////////////////////
+//  Inicialización de RF RX
+#if 1 // Cambiar a 1 para activar el test de RF
+////////////////////////////////
+  rf_init();
+  
+  // Buffer para datos recibidos
+  static __xdata uint8_t rx_buffer[64];
+  
+  // Parpadeo para indicar inicio
+  for (uint8_t i = 0; i < 5; i++) {
+      LED_B_ON;
+      delay_ms(50);
+      LED_B_OFF;
+      delay_ms(50);
+  }
+
+  while (1) {
+      // Intentar recibir un paquete
+      uint8_t len = rf_receive_packet(rx_buffer, 63);
+      
+      if (len > 0) {
+          // Verificar si el paquete comienza con "LED"
+          if (len >= 3 && rx_buffer[0] == 'L' && rx_buffer[1] == 'E' && rx_buffer[2] == 'D') {
+              LED_G_ON;  // Si datos recividos comienza con "LED" Encender LED verde
+              delay_ms(5000);
+              LED_G_OFF;
+          }
+          else {
+              LED_R_ON;  // Si datos recividos no comienza con "LED" Encender LED rojo
+              delay_ms(5000);
+              LED_R_OFF;
+          }
+      }
+  }
+#endif //RF RX
 //////////////////////////////////
 //  Inicialización de COBS
 #if 0 // Cambiar a 1 para activar el COBS
