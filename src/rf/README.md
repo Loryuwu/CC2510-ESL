@@ -1,4 +1,7 @@
 # ⚠️En desarrollo, aun no funcional⚠️
+el proyecto esta funcionando bastante bien, la funcion de envío de datos se come las 2 primeros caracteres 
+en lugar de recibir "Hola Mundo" recibe "la Mundo", aun no se por qué, pero en demás, todo correcto.
+
 # Módulo de Radiofrecuencia (RF) para CC2510
 
 Este módulo implementa una comunicación inalámbrica básica utilizando el transceptor de 2.4GHz integrado en el CC2510.
