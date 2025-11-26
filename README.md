@@ -80,10 +80,41 @@ Para flashear, deberás conectar el Debugger al chip soldando 5 cables, 2 de ali
 ## ⚠️ Ayuda
 Actualmente estoy en este proyecto unicamente como hobbie, la electronica es algo que me apaciona y me gusta hacer, lamentablemente, no soy experto y jamás he hecho ningun curso de programacion o nada parecido, lo que se es investigando, leyendo y preguntandole a chatGPT (el cual, en este proyeto, poco es lo que ayuda, sinceramente, pero si he logrado entender muchas partes de este codigo gracias a el).
 
-Por ahora, no he logrado echar a andar lo que es la comunicacion RF ni tampoco el sueño profundo para un bajo consumo de energía, si alguien por ahí logra avanzar en este proyecto, agradecería mil que se comunique conmigo y me preste ayuda para lograr aprender y avanzar.
+Si alguien por ahí logra avanzar en este proyecto, agradecería mil que se comunique conmigo y me preste ayuda para lograr aprender, avanzar e intercambiar ideas.
 
-Edit: Logré hacer que funcione el RF, pero no logré hacer que funcione el sleep profundo, por lo que el consumo es alto.
-implementé un bloque rf que escucha la palabra "LED x" donde x puede ser R, G o B, para controlar los colores del led y una imagen en la pantalla, la cual es la que se encuentra en el archivo "image.h".
+
+### 📝 Progreso y estado
+#### ✅ EPD funcional:
+funciones clave:
+- `epd_init()` - Inicializa el EPD
+- `epd_clearDisplay()` - Limpia la pantalla enviando 0x00 a toda la pantalla.
+- `epd_globalUpdate(imagenBN, imagenR)` - envia los datos para las imagenes y refresca automaticamente
+- `epd_sendIndexData(index, data, len)` - envia los datos para la imagen
+    * index: 0x10 para informacion blanco y negro, 0x13 para rojo.
+    * data: puntero a memoria con los datos de la imagen.
+    * len: longitud de los datos.
+- `epd_sendColor(index, data, len)` - envia los datos para la imagen
+    * index: 0x10 para informacion blanco y negro, 0x13 para rojo.
+    * data: 0x00 para dejar en blanco, solo envía "vacio" indicar que quieres la pantalla en blanco o que no usarás pixeles del color seleccionado.
+    * len: longitud de los datos.
+- `epd_flushDisplay()` - refresca la pantalla.
+- `epd_powerOn()` - enciende la pantalla.
+- `epd_powerOff()` - apaga la pantalla.
+
+
+#### ✅ RF funcional (a medias):
+- ya está disponible `rf_init()`, `rf_send_packet()` y `rf_receive_packet()`, pero en algunos casos las funciones quedan colgadas, no se exactamente por que.
+
+
+#### ❗ Flash En desarrollo:
+- Estoy intentando implementar esta funcion de comunicacion con la flash externa, pero sin una comunicacion directa con el CC2510 es complicado saber exactamente que está ocurriendo, mi proximo intento será crear una comunicacion uart por software (ya que el cc2510 no tiene un puerto uart nativo) pero aun no estoy seguro de como hacer esto.
+
+#### ❗ DeepSleep no funcional:
+- Hay funciones de `delay_ms()` para espera bloqueante y `Sleep_ms()` para dormir el chip, pero el Sleep no genera exactamente un bajo consumo, el chip sigue consumiendo electricidad (o eso creo), hice pruebas con un amperimetro y se refleja un consumo muy similar al de un delay normal.
+
+#### ❗ NFC no desarrollado:
+- aun no toco esta parte, no hay pruebas ni itentos.
+
 
 ### ⚠️ Importante:
 Este proyecto está completamente basado en otro repositorio que encontré:

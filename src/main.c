@@ -121,6 +121,39 @@ void main(void) {
 
 #endif //EPD
 ////////////////////////////////
+//  Inicialización de la Comunicacion al flash externo
+#if 1 // Cambiar a 1 para activar el test de memoria Flash
+////////////////////////////////
+  rf_init();
+  spi_flash_init();
+
+  uint16_t flash_id = spi_flash_read_id();
+
+  while (1)
+  {
+    if (flash_id == 0xEF) {
+      LED_ON;
+      delay_ms(5000);
+      LED_OFF;
+      delay_ms(5000);
+    }else {
+      LED_ON;
+      delay_ms(500);
+      LED_OFF;
+      delay_ms(500);
+    }
+  }
+
+  // while (1)
+  // {
+  //   LED_B_ON;
+  //   rf_send_packet(&flash_id, sizeof(flash_id));
+  //   LED_B_OFF;
+  //   delay_ms(5000);
+  // }
+
+#endif //Flash
+////////////////////////////////
 //  Inicialización de RF TX
 #if 0 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
@@ -160,7 +193,7 @@ void main(void) {
 #endif //RF TX
 ////////////////////////////////
 //  Inicialización de RF RX
-#if 1 // Cambiar a 1 para activar el test de RF
+#if 0 // Cambiar a 1 para activar el test de RF
 ////////////////////////////////
   rf_init();
   epd_init(); 
