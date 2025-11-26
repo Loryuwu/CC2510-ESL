@@ -5,11 +5,11 @@ Este es un proyecto para el control de estos tags Epaper de 2,2" o 4,2" (tambien
 Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8051 + transceptor de RF a 2,4GhZ
 
 ## ✨ Documentación
-- [CC2510 - MCU + radio - 8051](../../raw/master/doc/cc2510.pdf) - Corazon del proyecto.
-- [NT3H2111 - NFC](../../raw/master/doc/NT3H2111_2211.pdf) - Chip programable por I2C.
-- [Pervasives Display - 2.13"/4,17" EPD display](../../raw/master/doc/Pervasives.pdf) - La pagina de pervasives al parecer descontinuó las screens usadas (Spectra Red) que eran las de 3 colores "SE2xxxJS0E1" (donde "xxx" es el tamaño de la screen) pero incluí 2 librerías en .zip para el manejo de estas, una mas pesada y llena de funciones a mi parecer inutiles, pero facil de usar e intuitiva, y otra con lo justo y mucho mas liviana.
-- [TPS61071 - boost converter](../../raw/master/doc/tps61071.pdf) - Usado para dar energía a los leds.
-- [W25X10CL - Winbond 1Mbits NOR SPI flash](../../raw/master/doc/w25x10cl.pdf) - Memoria flash externa por SPI
+- [CC2510 - MCU + radio - 8051](./doc/cc2510.pdf) - Corazon del proyecto.
+- [NT3H2111 - NFC](./doc/NT3H2111_2211.pdf) - Chip programable por I2C.
+- [Pervasives Display - 2.13"/4,17" EPD display](./doc/Pervasives.pdf) - La pagina de pervasives al parecer descontinuó las screens usadas (Spectra Red) que eran las de 3 colores "SE2xxxJS0E1" (donde "xxx" es el tamaño de la screen) pero incluí 2 librerías en .zip para el manejo de estas, una mas pesada y llena de funciones a mi parecer inutiles, pero facil de usar e intuitiva, y otra con lo justo y mucho mas liviana.
+- [TPS61071 - boost converter](./doc/tps61071.pdf) - Usado para dar energía a los leds.
+- [W25X10CL - Winbond 1Mbits NOR SPI flash](./doc/w25x10cl.pdf) - Memoria flash externa por SPI
 
 ## 📦 Requisitos
 Lista de herramientas necesarias:
