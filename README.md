@@ -107,7 +107,7 @@ funciones clave:
 
 
 #### ❗ Flash En desarrollo:
-- Estoy intentando implementar esta funcion de comunicacion con la flash externa, pero sin una comunicacion directa con el CC2510 es complicado saber exactamente que está ocurriendo, mi proximo intento será crear una comunicacion uart por software (ya que el cc2510 no tiene un puerto uart nativo) pero aun no estoy seguro de como hacer esto.
+- Estoy intentando implementar esta funcion de comunicacion con la flash externa, pero sin una comunicacion directa con el CC2510 es complicado saber exactamente que está ocurriendo, normalmente uso los Leds como mensajes debug visuales (led azul para mostrar funcion corriendo, led verde para mostrar exito, rojo error, pero este chip usa los mismos pines de los leds como bus de datos al flash, por lo que no puedo usarlos para mensajes debug visuales). Mi proximo intento será crear una comunicacion uart por software (ya que el cc2510 no tiene un puerto uart nativo) pero aun no estoy seguro de como hacer esto.
 
 #### ❗ DeepSleep no funcional:
 - Hay funciones de `delay_ms()` para espera bloqueante y `Sleep_ms()` para dormir el chip, pero el Sleep no genera exactamente un bajo consumo, el chip sigue consumiendo electricidad (o eso creo), hice pruebas con un amperimetro y se refleja un consumo muy similar al de un delay normal.
