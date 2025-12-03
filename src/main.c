@@ -18,7 +18,6 @@
 void main(void) {
   init_clock(); //Cambiar de oscillador interno a externo
   time_init(); //Inicializa el timer para funciones de retardo y millis
-  //uart_init(); //Inicializa UART para debug
   
   HAL_ENABLE_INTERRUPTS(); //Habilita interrupciones globales
   LED_INIT; //Inicializa pines de los LEDs
@@ -122,7 +121,7 @@ void main(void) {
 #endif //EPD
 ////////////////////////////////
 //  Inicialización de la Comunicacion al flash externo
-#if 1 // Cambiar a 1 para activar el test de memoria Flash
+#if 0 // Cambiar a 1 para activar el test de memoria Flash
 ////////////////////////////////
   rf_init();
   spi_flash_init();
@@ -248,22 +247,31 @@ void main(void) {
 #endif //RF RX
 //////////////////////////////////
 //  Inicialización de COBS
-#if 0 // Cambiar a 1 para activar el COBS
+#if 1 // Cambiar a 1 para activar el COBS
 //////////////////////////////////
+
+  uart_init(); //Inicializa UART para debug
   CobsState __xdata cobsState;
   cobs_init(&cobsState);
+  static __xdata uint8_t data[] = "\nHola mundo desde UART!\n¿Como esta el mundo?";
+  uint8_t data_length = sizeof(data) - 1; // Restamos 1 para no enviar el caracter nulo
 
   uint32_t __xdata next = 0;
   while (1) {
     if (cobs_handle(&cobsState)) {
+      LED_G_ON;
       cobs_send(cobsState.packet, cobsState.packet_size);
-      LED_TOGGLE;
+      LED_G_OFF;
     }
 
-    if (millis() >= next) {
-      next += 1000;
-      LED_TOGGLE;
-    }
+    // if (millis() >= next) {
+    //   uart_send_str("\n\n\n\nCobs:\n");
+    //   cobs_send(data, data_length);
+    //   uart_send_str("\n\nUART:\n");
+    //   uart_send(data, data_length);
+    //   next += 5000;
+    //   LED_B_TOGGLE;
+    // }
   }
 #endif //COBS
 }

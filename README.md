@@ -84,6 +84,30 @@ Si alguien por ahí logra avanzar en este proyecto, agradecería mil que se comu
 
 
 ### 📝 Progreso y estado
+#### ✅ LED funcional:
+funciones clave:
+- `LED_INIT;` - macro que inicializa el LED
+- `LED_BOOST_ON;` - macro que enciende el LED boost (enciende el TPS61071)
+- `LED_BOOST_OFF;` - macro que apaga el LED boost (apaga el TPS61071)
+- `LED_ON;` - macro que enciende el LED blanco
+- `LED_OFF;` - macro que apaga el LED blanco
+- `LED_TOGGLE;` - macro que invierte el estado del LED blanco
+- `LED_G_ON;` - macro que enciende el LED verde
+- `LED_G_OFF;` - macro que apaga el LED verde
+- `LED_G_TOGGLE;` - macro que invierte el estado del LED verde
+- `LED_R_ON;` - macro que enciende el LED rojo
+- `LED_R_OFF;` - macro que apaga el LED rojo
+- `LED_R_TOGGLE;` - macro que invierte el estado del LED rojo
+- `LED_B_ON;` - macro que enciende el LED azul
+- `LED_B_OFF;` - macro que apaga el LED azul
+- `LED_B_TOGGLE;` - macro que invierte el estado del LED azul
+
+Importante!!
+
+Actualmente hay un macro condicional `#define RGB`, si se define, se usan los pines para inicializar los 2 leds (RGB y blanco), si no se define, solo se define el led blanco, ya que los pines para RGB son los mismos que se usan para comunicarse con la flash, por lo que hay conflicto de uso de pines con el led RGB y solo se puede usar el led blanco.
+Si se quiere trabajar con la flash externa, se debe comentar el macro `#define RGB`.
+
+
 #### ✅ EPD funcional:
 funciones clave:
 - `epd_init()` - Inicializa el EPD
@@ -101,6 +125,13 @@ funciones clave:
 - `epd_powerOn()` - enciende la pantalla.
 - `epd_powerOff()` - apaga la pantalla.
 
+
+#### ✅ COBS funcional:
+se ha logrado implementar un protocolo UART de comunicacion con codificacion COBS (reutilizado completamente desde el proyecto principal), este bus está a los pines P0_4 (TX) y P0_5 (RX).
+Tambien hay un script en Python que permite la comunicacion con el cc2510 a traves de este bus, necesitarás un convertidor TTL-USB para usarlo. e instalar la libreria cobs con el comando `pip install cobs pyserial`.
+Al ejecutar el script, se puede enviar comandos al cc2510 y recibir el mismo mensaje de respuesta.
+
+Problema!! al igual como pasa con los leds RGB, el bus uart se usa para comunicacion con la EPD y con el chip NFC, por lo que se debe implementar una estrategia para evitar conflictos de uso de pines. 
 
 #### ✅ RF funcional (a medias):
 - ya está disponible `rf_init()`, `rf_send_packet()` y `rf_receive_packet()`, pero en algunos casos las funciones quedan colgadas, no se exactamente por que.
