@@ -3,7 +3,8 @@
 
 Este es un proyecto para el control de estos tags Epaper de 2,2" o 4,2" (tambien hay algunos 2,6 que traen este MCU, pero no todos)
 Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8051 + transceptor de RF a 2,4GhZ
-Este será un proyecto unicamente de pruebas y desarrollo, pretendo crear otros repos para los que serán el AP y los nodos, que serán los que realmente harán el trabajo, pero aun no estoy listo ni tengo las estructuras suficientes para un proyecto final, en todo caso, cuando se suban, este repo se actualizará para poner los enlaces a esos repos.
+
+Este será un proyecto unicamente de pruebas y desarrollo, no de algo final, pretendo crear otros repos para los que serán el AP, los nodos y el programa que controlará todo el sistema, que serán los que realmente harán el trabajo, pero aun no estoy listo ni tengo las estructuras suficientes para un proyecto final, se puede considerar esa como le version beta, en todo caso, cuando se suban, este repo se actualizará para poner los enlaces a esos repos.
 
 ## ✨ Documentación
 - [CC2510 - MCU + radio - 8051](./doc/cc2510.pdf) - Corazon del proyecto.
