@@ -58,3 +58,8 @@ void cobs_send(const uint8_t *data, uint8_t length) {
   }
   uart_send_byte(0);
 }
+
+void cobs_send_str(const char *str) {
+  cobs_send((uint8_t*)str, strlen(str));
+}
+  

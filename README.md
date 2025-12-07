@@ -3,6 +3,7 @@
 
 Este es un proyecto para el control de estos tags Epaper de 2,2" o 4,2" (tambien hay algunos 2,6 que traen este MCU, pero no todos)
 Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8051 + transceptor de RF a 2,4GhZ
+Este será un proyecto unicamente de pruebas y desarrollo, pretendo crear otros repos para los que serán el AP y los nodos, que serán los que realmente harán el trabajo, pero aun no estoy listo ni tengo las estructuras suficientes para un proyecto final, en todo caso, cuando se suban, este repo se actualizará para poner los enlaces a esos repos.
 
 ## ✨ Documentación
 - [CC2510 - MCU + radio - 8051](./doc/cc2510.pdf) - Corazon del proyecto.
@@ -10,6 +11,8 @@ Es un script para el control del chip CC2510 de Texas instruments, MCU basado en
 - [Pervasives Display - 2.13"/4,17" EPD display](./doc/Pervasives.pdf) - La pagina de pervasives al parecer descontinuó las screens usadas (Spectra Red) que eran las de 3 colores "SE2xxxJS0E1" (donde "xxx" es el tamaño de la screen) pero incluí 2 librerías en .zip para el manejo de estas, una mas pesada y llena de funciones a mi parecer inutiles, pero facil de usar e intuitiva, y otra con lo justo y mucho mas liviana.
 - [TPS61071 - boost converter](./doc/tps61071.pdf) - Usado para dar energía a los leds.
 - [W25X10CL - Winbond 1Mbits NOR SPI flash](./doc/w25x10cl.pdf) - Memoria flash externa por SPI
+
+- [Documentación](./documentacion/01_Resumen_General.md) - Tengo tambien un directorio "documentacion" hecho por ia, por lo que puede tener errores o no estar alineado con el codigo, pero explica bastante bien el funcionamiento de todo el proyecto como una "guia de uso", no se fíen al 100% de lo ahí escrito, pero para tener una idea, lo revisé y es muy preciso, pero no exacto.
 
 ## 📦 Requisitos
 Lista de herramientas necesarias:

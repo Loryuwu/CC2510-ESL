@@ -4,7 +4,7 @@ from cobs import cobs
 
 # Configuración del puerto serial
 # CAMBIA ESTO POR TU PUERTO COM (ej: 'COM3', 'COM5')
-SERIAL_PORT = 'COM6' 
+SERIAL_PORT = 'COM9' 
 BAUD_RATE = 115200
 
 def send_cobs_message(ser, message):
@@ -20,21 +20,42 @@ def send_cobs_message(ser, message):
     # 3. Enviar por serial
     ser.write(packet)
 
-def read_cobs_response(ser):
-    # Leer hasta encontrar un 0x00
-    data = ser.read_until(b'\x00')
-    
-    if len(data) > 0:
-        # Quitar el 0x00 final
-        encoded_data = data[:-1]
-        
+def read_response(ser):
+    try:
+        # Leer todo lo que haya en el buffer (con un pequeño timeout implícito del puerto)
+        if ser.in_waiting > 0:
+            data = ser.read(ser.in_waiting)
+        else:
+            # Si no hay nada, esperar un poco a ver si llega algo
+            time.sleep(0.1)
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting)
+            else:
+                print("No hubo respuesta (timeout)")
+                return
+
+        # Intentar decodificar como COBS primero
+        # COBS termina en 0x00
+        if b'\x00' in data:
+            try:
+                # Tomamos hasta el primer 0x00
+                cobs_packet = data.split(b'\x00')[0]
+                decoded = cobs.decode(cobs_packet)
+                print(f"Respuesta [COBS]: {decoded.decode('utf-8', errors='replace')}")
+                return
+            except Exception:
+                # Si falla, seguimos al fallback de texto
+                pass
+
+        # Fallback: Texto Plano
         try:
-            # Decodificar
-            decoded = cobs.decode(encoded_data)
-            print(f"Recibido: {decoded.decode('utf-8')}")
-        except Exception as e:
-            print(f"Error decodificando: {e}")
-            print(f"Data RAW recibida: {data.hex()}")
+            text = data.decode('utf-8').strip()
+            print(f"Respuesta [TEXTO]: {text}")
+        except UnicodeDecodeError:
+            print(f"Respuesta [RAW]: {data.hex()}")
+            
+    except Exception as e:
+        print(f"Error leyendo respuesta: {e}")
 
 if __name__ == "__main__":
     try:
@@ -47,8 +68,8 @@ if __name__ == "__main__":
                 break
                 
             send_cobs_message(ser, msg)
-            time.sleep(0.1) # Dar tiempo al micro para responder
-            read_cobs_response(ser)
+            time.sleep(0.5) # Dar tiempo al micro para procesar y responder
+            read_response(ser)
             
     except serial.SerialException:
         print(f"No se pudo abrir el puerto {SERIAL_PORT}. Verifica que sea el correcto y esté libre.")

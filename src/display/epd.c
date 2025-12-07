@@ -64,6 +64,10 @@ void epd_init() {
 
 }
 
+void epd_spi_disable() {
+  U0CSR &= ~BV(6); // disable SPI
+}
+
 void epd_clearDisplay() {
   epd_sendColor(0x10, 0x00, BUFFER_SIZE);
   epd_sendColor(0x13, 0x00, BUFFER_SIZE);

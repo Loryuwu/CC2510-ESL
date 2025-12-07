@@ -63,6 +63,15 @@ void uart_init(void) {
   URX1IE = 1;    // enable RX interrupt
 }
 
+void uart_disable(void) {
+  URX1IE = 0;    // disable RX interrupt
+  IEN2 &= ~BV(3); // disable TX interrupt
+  U1CSR = 0;     // disable UART
+  
+  // Release pins P0_4 (TX) and P0_5 (RX) from Peripheral control
+  P0SEL &= ~(BV(4) | BV(5));
+}
+
 void uart_send_byte(uint8_t data) {
   while (tx_buffer_full) {
     // buffer is full, wait for a byte to be sent

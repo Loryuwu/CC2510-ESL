@@ -6,6 +6,7 @@
 #include <string.h>
 
 void uart_init(void);
+void uart_disable(void);
 
 void uart_send_byte(uint8_t data);
 void uart_send(const uint8_t *data, size_t len);

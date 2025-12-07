@@ -16,5 +16,6 @@ typedef struct {
 void cobs_init(CobsState *state);
 bool cobs_handle(CobsState *state);
 void cobs_send(const uint8_t *data, uint8_t size);
+void cobs_send_str(const char *str);
 
 #endif

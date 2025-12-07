@@ -45,6 +45,7 @@ extern const uint8_t register_data[];
 
 void epd_waitBusy();
 void epd_init();
+void epd_spi_disable();
 void epd_clearDisplay();
 void epd_globalUpdate(const uint8_t * data1s, const uint8_t * data2s);
 void epd_sendIndexData( uint8_t index, const uint8_t *data, uint32_t len );

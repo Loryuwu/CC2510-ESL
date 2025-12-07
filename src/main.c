@@ -32,7 +32,7 @@ void main(void) {
 #if 0 //test display
   LED_B_ON;
   epd_init();
-  epd_sendIndexData(0x10, image4 , BUFFER_SIZE);
+  epd_sendIndexData(0x10, image3 , BUFFER_SIZE);
   epd_sendColor(0x13, 0x00, BUFFER_SIZE);
   epd_flushDisplay();
   LED_B_OFF;
@@ -264,14 +264,34 @@ void main(void) {
       LED_G_OFF;
     }
 
-    // if (millis() >= next) {
-    //   uart_send_str("\n\n\n\nCobs:\n");
-    //   cobs_send(data, data_length);
-    //   uart_send_str("\n\nUART:\n");
-    //   uart_send(data, data_length);
-    //   next += 5000;
-    //   LED_B_TOGGLE;
-    // }
+    if (millis() >= next) {
+      cobs_send_str("\n\n\n\nCobs:\n");
+      cobs_send(data, data_length);
+      uart_send_str("\n\nUART:\n");
+      uart_send(data, data_length);
+      next += 5000;
+      LED_B_TOGGLE;
+    }
   }
 #endif //COBS
+//////////////////////////////////
+//  Test de COBS uart + EPD spi
+#if 0 // Cambiar a 1 para activar test
+//////////////////////////////////
+
+  uart_init();
+  // rf_init();
+  CobsState __xdata cobsState;
+  cobs_init(&cobsState);
+
+  while (1) {
+    if (cobs_handle(&cobsState)) {
+      LED_B_ON;
+      cobs_send(cobsState.packet, cobsState.packet_size);
+      // rf_send_packet(cobsState.packet, cobsState.packet_size);
+      delay_ms(500);
+      LED_B_OFF;
+    }
+  }
+#endif //uart + epd spi
 }
