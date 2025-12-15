@@ -13,6 +13,9 @@
 
 #include "cobs/cobs.h"
 
+#include "nfc/nfc.h"
+#include "nfc/i2c.h"
+
 
 
 void main(void) {
@@ -29,10 +32,10 @@ void main(void) {
 
   delay_ms(500);
 
-#if 0 //test display
+#if 1 //test display
   LED_B_ON;
   epd_init();
-  epd_sendIndexData(0x10, image3 , BUFFER_SIZE);
+  epd_sendColor(0x10, 0x00 , BUFFER_SIZE);
   epd_sendColor(0x13, 0x00, BUFFER_SIZE);
   epd_flushDisplay();
   LED_B_OFF;
@@ -247,7 +250,7 @@ void main(void) {
 #endif //RF RX
 //////////////////////////////////
 //  Inicialización de COBS
-#if 1 // Cambiar a 1 para activar el COBS
+#if 0 // Cambiar a 1 para activar el COBS
 //////////////////////////////////
 
   uart_init(); //Inicializa UART para debug
@@ -260,14 +263,15 @@ void main(void) {
   while (1) {
     if (cobs_handle(&cobsState)) {
       LED_G_ON;
+      delay_ms(500);
       cobs_send(cobsState.packet, cobsState.packet_size);
       LED_G_OFF;
     }
 
     if (millis() >= next) {
-      cobs_send_str("\n\n\n\nCobs:\n");
+      cobs_send_str("\n[Cobs]:");
       cobs_send(data, data_length);
-      uart_send_str("\n\nUART:\n");
+      uart_send_str("\n[UART]:");
       uart_send(data, data_length);
       next += 5000;
       LED_B_TOGGLE;
@@ -275,23 +279,128 @@ void main(void) {
   }
 #endif //COBS
 //////////////////////////////////
-//  Test de COBS uart + EPD spi
+//  Test de UART Texto Plano
 #if 0 // Cambiar a 1 para activar test
 //////////////////////////////////
 
   uart_init();
-  // rf_init();
-  CobsState __xdata cobsState;
-  cobs_init(&cobsState);
+  
+  uart_send_str("\r\nSistema iniciado: Esperando texto UART...\r\n");
 
+  uint8_t rx_byte;
   while (1) {
-    if (cobs_handle(&cobsState)) {
-      LED_B_ON;
-      cobs_send(cobsState.packet, cobsState.packet_size);
-      // rf_send_packet(cobsState.packet, cobsState.packet_size);
-      delay_ms(500);
-      LED_B_OFF;
+    if (uart_available()) {
+        if (uart_read_byte(&rx_byte)) {
+            // Echo del caracter recibido
+            uart_send_byte(rx_byte);
+            
+            // Si recibimos Enter, hacemos parpadear el LED
+            if (rx_byte == '\r') {
+                uart_send_byte('\n'); // Nueva linea visual
+                for (uint8_t i = 0; i < 10; i++) {
+                  LED_G_TOGGLE;
+                  delay_ms(50);
+                }
+            }
+        }
     }
   }
-#endif //uart + epd spi
+#endif //uart texto plano
+//////////////////////////////////
+//  Test de NFC encontrar direccion
+#if 0 // Cambiar a 1 para activar test
+//////////////////////////////////
+//  Test de NFC
+  nfc_init();
+  P1_0 = 1;
+
+  // I2C Scanner Loop
+  // Scans addresses 1 to 127
+  
+  uint8_t found_addr = nfc_scan();
+   
+  
+  if (found_addr != 0) {
+      // FOUND!
+      while(1) {
+         // Blink High Nibble (Upper 4 bits) - RED
+         uint8_t High = (found_addr >> 4);
+         if (High == 0) {
+             LED_B_ON; delay_ms(500); LED_B_OFF; // Long Blue = 0
+         } else {
+             for(uint8_t k=0; k<High; k++) {
+                 LED_R_ON; delay_ms(300); LED_R_OFF; delay_ms(300);
+             }
+         }
+         
+         delay_ms(1000); // Pause between nibbles
+         
+         // Blink Low Nibble (Lower 4 bits) - GREEN
+         uint8_t Low = (found_addr & 0x0F);
+         if (Low == 0) {
+             LED_B_ON; delay_ms(500); LED_B_OFF; // Long Blue = 0
+         } else {
+             for(uint8_t k=0; k<Low; k++) {
+                 LED_G_ON; delay_ms(300); LED_G_OFF; delay_ms(300);
+             }
+         }
+         
+         delay_ms(3000); // Long Pause before repeating
+      }
+  } else {
+      // Nothing found
+      while(1) {
+          LED_R_ON; delay_ms(100); LED_R_OFF; delay_ms(100);
+      }
+  }
+
+  while (1);
+#endif //nfc
+//////////////////////////////////
+//  Test de NFC (Erase & Write)
+#if 0
+//////////////////////////////////
+//  Run Erase & Write Test
+  nfc_init();
+
+  // 1. Safe Erase (User Memory Only: I2C Page 1..0x39)
+  // Blink Blue while erasing
+  LED_B_ON;
+  nfc_erase_all(); // NOW Safe!
+  LED_B_OFF;
+  delay_ms(500);
+
+  // 2. Write "HelOwOrld ^~^" to I2C Page 1 (NFC Block 4 - First User Page)
+  static __xdata uint8_t hello_msg[16] = "HelOwOrld ^~^";
+  
+  // Write to Page 1
+  if (nfc_write_page(1, hello_msg)) {
+      // Write OK, Verify?
+      static __xdata uint8_t read_back[16];
+      nfc_read_page(1, read_back);
+      
+      // Check first char matches 'H'
+      if (read_back[0] == 'H') {
+          // SUCCESS! Green Heartbeat
+          while(1) {
+              LED_G_ON; delay_ms(100); LED_G_OFF; delay_ms(100);
+              LED_G_ON; delay_ms(100); LED_G_OFF; delay_ms(800);
+          }
+      } else {
+           // Write Ack'd but Read mismatch -> Green/Red Alternating
+           while(1) {
+              LED_G_ON; delay_ms(200); LED_G_OFF;
+              LED_R_ON; delay_ms(200); LED_R_OFF;
+          }
+      }
+  } else {
+      // Write NACK -> RED Fast
+      while(1) {
+          LED_R_ON; delay_ms(50); LED_R_OFF; delay_ms(50);
+      }
+  }
+
+  while (1);
+#endif //nfc
+
 }
