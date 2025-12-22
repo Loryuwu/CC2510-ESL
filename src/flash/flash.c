@@ -1,5 +1,6 @@
 #include "flash.h"
 #include "../hal/hal.h"
+#include "../hal/time.h"
 
 // CS Pin Macros (P1_4)
 #define FLASH_CS_LOW()    st(P1_4 = 0;)
@@ -13,6 +14,15 @@ static uint8_t spi_transfer(uint8_t data) {
 }
 
 void spi_flash_init(void) {
+
+    P1_5 = 0; P1_6 = 0; P1_7 = 0;
+    // Also set P1_0 (Flash/NFC Power) as Output
+    P1DIR |= 0xE0 | 0x01; // P1_5,6,7 and P1_0
+    
+    // POWER ON FLASH/NFC
+    FLASH_POWER_ON;
+    delay_ms(10); // Allow power to stabilize
+
     // 1. Configure USART1 for SPI Alt 2
     // PERCFG.U1CFG = 1 (Alt 2)
     PERCFG |= 0x02; 
@@ -42,6 +52,22 @@ void spi_flash_init(void) {
 
     // Enable SPI
     U1CSR |= BV(6);
+}
+
+void spi_flash_disable(void) {
+    // Disable SPI
+    U1CSR &= ~BV(6);
+    
+    // Revert pins to GPIO (Clear P1SEL bits 5, 6, 7)
+    P1SEL &= ~(BV(5) | BV(6) | BV(7));
+    
+    // Ensure LEDs are OFF (Low)
+    P1_5 = 0; 
+    P1_6 = 0; 
+    P1_7 = 0;
+    
+    // Ensure P1_4 (CS) is High (Inactive) or whatever state is safe
+    FLASH_CS_HIGH();
 }
 
 void spi_flash_wait_busy(void) {

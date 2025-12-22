@@ -43,18 +43,29 @@ extern const uint8_t register_data[];
 
 #define BUFFER_SIZE (HRES / 8 * VRES)
 
-void epd_waitBusy();
-void epd_init();
-void epd_spi_disable();
-void epd_clearDisplay();
+void epd_reset(uint32_t ms1, uint32_t ms2, uint32_t ms3, uint32_t ms4, uint32_t ms5);
+void epd_softReset(void);
+void epd_waitBusy(void);
+void epd_init(void);
+void epd_spi_disable(void);
+void epd_clearDisplay(void);
 void epd_globalUpdate(const uint8_t * data1s, const uint8_t * data2s);
 void epd_sendIndexData( uint8_t index, const uint8_t *data, uint32_t len );
 void epd_sendColor( uint8_t index, const uint8_t data, uint32_t len );
-void epd_flushDisplay();
-void epd_DCDC_powerOn();
-void epd_powerOn();
-void epd_powerOff();
+void epd_flushDisplay(void);
+void epd_DCDC_powerOn(void);
+void epd_DCDC_powerOff(void);
+void epd_powerOn(void);
+void epd_powerOff(void);
 void epd_sendCommand(uint8_t cmd);
 void epd_sendData(uint8_t data);
+
+void epd_stream_start(uint8_t index);
+void epd_stream_data(const uint8_t *data, uint32_t len);
+void epd_stream_end(void);
+
+void epd_setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void epd_drawBlackRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+void epd_setBWMode(uint8_t bw_only);
 
 #endif

@@ -84,6 +84,7 @@ bool nfc_write_page(uint8_t page, uint8_t *data) {
 }
 
 bool nfc_read_session_reg(uint8_t *reg_val) {
+    (void)reg_val;
     return false;
 }
 

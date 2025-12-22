@@ -20,6 +20,9 @@
 #define CMD_MANUFACTURER_ID   0x90
 #define CMD_JEDEC_ID          0x9F
 
+#define FLASH_POWER_ON P1_0 = 1
+#define FLASH_POWER_OFF P1_0 = 0
+
 // Function Prototypes
 void spi_flash_init(void);
 uint16_t spi_flash_read_id(void);
@@ -30,5 +33,6 @@ void spi_flash_chip_erase(void);
 void spi_flash_power_down(void);
 void spi_flash_release_power_down(void);
 void spi_flash_wait_busy(void);
+void spi_flash_disable(void);
 
 #endif // FLASH_H

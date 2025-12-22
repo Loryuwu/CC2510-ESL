@@ -27,14 +27,14 @@ INTERRUPT(sleep_timer_isr, ST_VECTOR) {
   WORIRQ &= ~0x01; // Clear Event 0 flag
 }
 
-void time_init() {
+void time_init(void) {
   T3CTL = (uint8_t)((0b111 << 5) | BV(1) | BV(3)); // clk/128, modulo mode, overflow interrupt en
   T3CC0 = 203;                                     // ~1ms intrerval
   T3IE = BV(0);                                    // enable timer3 interrupt
   T3CTL |= BV(4);                                  // start Timer 3
 }
 
-volatile uint32_t millis() {
+volatile uint32_t millis(void) {
   uint32_t value;
   HAL_CRITICAL_STATEMENT(value = currentTime);
   return value;

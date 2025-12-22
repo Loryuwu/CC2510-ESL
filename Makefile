@@ -5,7 +5,7 @@ XRAM_SIZE = 0xF00 # slow RAM
 
 IRAM_SIZE = 0x100 # fast RAM
 
-SHELL = sh -xv
+#SHELL = sh -xv
 
 TARGET = firmware
 

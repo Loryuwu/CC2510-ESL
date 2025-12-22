@@ -6,15 +6,15 @@
 #define UART_RX_BUFFER_SIZE 128
 
 uint8_t __xdata tx_buffer[UART_TX_BUFFER_SIZE];
-volatile uint8_t tx_buffer_head = 0;
-volatile uint8_t tx_buffer_tail = 0;
-volatile bool tx_in_progress = false;
-volatile bool tx_buffer_full = false;
+volatile uint8_t __xdata tx_buffer_head = 0;
+volatile uint8_t __xdata tx_buffer_tail = 0;
+volatile bool __xdata tx_in_progress = false;
+volatile bool __xdata tx_buffer_full = false;
 
 uint8_t __xdata rx_buffer[UART_TX_BUFFER_SIZE];
-volatile uint8_t rx_buffer_head = 0;
-volatile uint8_t rx_buffer_tail = 0;
-volatile bool rx_buffer_full = false;
+volatile uint8_t __xdata rx_buffer_head = 0;
+volatile uint8_t __xdata rx_buffer_tail = 0;
+volatile bool __xdata rx_buffer_full = false;
 
 INTERRUPT(uart_tx_isr, UTX1_VECTOR) {
   UTX1IF = 0;
@@ -101,7 +101,7 @@ void uart_send_str(const char *str) {
   uart_send(str, strlen(str));
 }
 
-uint8_t uart_available() {
+uint8_t uart_available(void) {
   uint8_t head, tail;
   HAL_CRITICAL_STATEMENT({
     head = rx_buffer_head;

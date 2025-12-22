@@ -16,7 +16,14 @@
 #include "nfc/nfc.h"
 #include "nfc/i2c.h"
 
+#include "flash/flash.h"
 
+// Global buffer for flash operations to save stack
+#define CHUNK_SIZE 32
+static __xdata uint8_t buffer[CHUNK_SIZE];
+static __xdata uint32_t g_addr;
+static __xdata uint32_t g_i;
+static __xdata uint16_t g_len;
 
 void main(void) {
   init_clock(); //Cambiar de oscillador interno a externo
@@ -33,12 +40,25 @@ void main(void) {
   delay_ms(500);
 
 #if 1 //test display
-  LED_B_ON;
+  LED_B_ON; 
   epd_init();
-  epd_sendColor(0x10, 0x00 , BUFFER_SIZE);
+  
+  // 1. Mostrar imagen normal
+  epd_setBWMode(0); // Modo normal
+  // epd_sendIndexData(0x10, image1, BUFFER_SIZE);
+  epd_sendColor(0x10, 0x55, BUFFER_SIZE);
   epd_sendColor(0x13, 0x00, BUFFER_SIZE);
   epd_flushDisplay();
   LED_B_OFF;
+  
+  delay_ms(2000); // Pausa para ver la imagen
+  
+  // 2. Probar refresco parcial
+  LED_B_ON;
+  epd_setBWMode(1); // Modo B/N para refresco rápido
+  epd_drawBlackRect(32, 32, 64, 64); // Cuadro negro de prueba (alineado a 8)
+  LED_B_OFF;
+  
   epd_powerOff();
   while (1);
 #endif
@@ -126,33 +146,93 @@ void main(void) {
 //  Inicialización de la Comunicacion al flash externo
 #if 0 // Cambiar a 1 para activar el test de memoria Flash
 ////////////////////////////////
-  rf_init();
+//  rf_init();
+  LED_BOOST_OFF;
   spi_flash_init();
 
   uint16_t flash_id = spi_flash_read_id();
 
-  while (1)
-  {
-    if (flash_id == 0xEF) {
-      LED_ON;
-      delay_ms(5000);
-      LED_OFF;
-      delay_ms(5000);
-    }else {
-      LED_ON;
-      delay_ms(500);
-      LED_OFF;
-      delay_ms(500);
-    }
-  }
+  // Verificamos ID (Winbond es 0xEF)
+  if ((flash_id >> 8) == 0xEF) {
+      // Indicación visual breve de éxito
+      LED_BOOST_ON;
+      LED_G_ON; delay_ms(100); LED_G_OFF;
+      LED_BOOST_OFF; // Apagamos boost para evitar flicker en LEDs durante lectura
 
-  // while (1)
-  // {
-  //   LED_B_ON;
-  //   rf_send_packet(&flash_id, sizeof(flash_id));
-  //   LED_B_OFF;
-  //   delay_ms(5000);
-  // }
+      // Inicializar EPD
+      epd_init();
+
+      // -------------- CANAL B/N (0x10) DESDE FLASH --------------
+      // Leemos de Flash en chunks y enviamos al EPD
+      epd_stream_start(0x10);
+
+      g_addr = 0; // Dirección inicio imagen en Flash
+      // uint32_t total_bytes = BUFFER_SIZE;
+
+      for (g_i = 0; g_i < BUFFER_SIZE; g_i += CHUNK_SIZE) {
+          g_len = CHUNK_SIZE;
+          if ((g_i + g_len) > BUFFER_SIZE) {
+              g_len = BUFFER_SIZE - g_i;
+          }
+
+          // 1. Leer de Flash (USART1)
+          spi_flash_read(g_addr, buffer, g_len);
+          g_addr += g_len;
+
+          // Invertir colores (Prueba)
+          //for(uint8_t k=0; k<g_len; k++) buffer[k] = ~buffer[k];
+
+          // 2. Escribir a EPD (USART0) - Sin cerrar la transacción del EPD
+          epd_stream_data(buffer, g_len);
+      }
+      epd_stream_end(); // Fin de comando 0x10
+
+      // -------------- CANAL ROJO (0x13) DESDE FLASH --------------
+      epd_stream_start(0x13);
+      
+      // Continuamos leyendo desde la Flash donde quedamos (o forzamos inicio de Red)
+      g_addr = BUFFER_SIZE; 
+
+      for (g_i = 0; g_i < BUFFER_SIZE; g_i += CHUNK_SIZE) {
+          g_len = CHUNK_SIZE;
+          if ((g_i + g_len) > BUFFER_SIZE) {
+              g_len = BUFFER_SIZE - g_i;
+          }
+
+          // 1. Leer de Flash (USART1)
+          spi_flash_read(g_addr, buffer, g_len);
+          g_addr += g_len;
+          
+          // Invertir colores si es necesario (comentado por defecto)
+          // for(uint8_t k=0; k<g_len; k++) buffer[k] = ~buffer[k];
+
+          // 2. Escribir a EPD (USART0)
+          epd_stream_data(buffer, g_len);
+      }
+      epd_stream_end(); // Fin de comando 0x13
+
+      // Refrescar y Apagar
+      epd_flushDisplay();
+      epd_powerOff();
+
+      // Desactivar Flash y Pines
+      spi_flash_disable();
+      FLASH_POWER_OFF;
+      
+      // Éxito Final
+      LED_BOOST_ON;
+      while(1) {
+         LED_G_ON; delay_ms(200); LED_G_OFF; delay_ms(2000);
+      }
+
+  } else {
+      // Error ID
+      FLASH_POWER_OFF;
+      LED_BOOST_ON;
+      while(1) {
+        LED_R_TOGGLE; delay_ms(100);
+      }
+  }
 
 #endif //Flash
 ////////////////////////////////
