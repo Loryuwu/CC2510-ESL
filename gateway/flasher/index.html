@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PriceTag Gateway – Flasher</title>
+<style>
+  :root { color-scheme: dark; }
+  body{background:#111;color:#ddd;font:15px/1.5 system-ui,sans-serif;margin:0;
+       display:flex;min-height:100vh;align-items:center;justify-content:center}
+  main{max-width:640px;padding:24px}
+  h1{color:#fff;font-size:22px;margin:0 0 4px}
+  .sub{color:#9aa;margin:0 0 20px}
+  code{background:#222;padding:1px 6px;border-radius:4px;color:#8fd}
+  ol{line-height:1.7} a{color:#6cf}
+  .btn{margin:18px 0}
+  .warn{background:#2a1f10;border-left:3px solid #d90;padding:10px 14px;border-radius:4px;color:#ecb}
+  esp-web-install-button{--esp-tools-button-color:#111;--esp-tools-button-text-color:#0f0}
+</style>
+</head>
+<body>
+<main>
+  <h1>PriceTag Gateway – Flasher</h1>
+  <p class="sub">ESP32-S3-Gateway (OEPL-Shim) per USB direkt aus dem Browser flashen.</p>
+
+  <div class="btn">
+    <esp-web-install-button manifest="manifest.json">
+      <span slot="unsupported">⚠️ Dieser Browser kann kein Web Serial – bitte <b>Chrome</b> oder <b>Edge</b> (Desktop) nutzen.</span>
+      <span slot="not-allowed">⚠️ Nur über <b>HTTPS</b> oder <b>localhost</b> nutzbar (Web Serial braucht sicheren Kontext).</span>
+    </esp-web-install-button>
+  </div>
+
+  <div class="warn">
+    Die Firmware-Dateien (<code>bootloader.bin</code>, <code>partitions.bin</code>,
+    <code>boot_app0.bin</code>, <code>firmware.bin</code>) sind <b>nicht</b> im Repo
+    (Build-Artefakte). Nach dem lokalen <code>pio run</code> neben diese Seite kopieren –
+    siehe <a href="README.md">README</a>.
+  </div>
+
+  <ol>
+    <li>Gateway lokal bauen: <code>cd gateway/gateway_oepl_shim &amp;&amp; pio run</code></li>
+    <li>Die vier <code>.bin</code> in diesen Ordner kopieren (Befehle im README).</li>
+    <li>Ordner über <b>HTTPS</b> oder <b>localhost</b> ausliefern
+        (z. B. <code>python -m http.server</code> → <code>http://localhost:8000/</code>).</li>
+    <li>ESP32-S3 per USB anstecken, <b>Install</b> klicken, Port wählen, flashen.</li>
+  </ol>
+</main>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js?module"></script>
+</body>
+</html>

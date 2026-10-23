@@ -1,50 +1,50 @@
-# 08. Compilación y Flasheo
+# 08. Kompilierung und Flashen
 
-Guía para construir el firmware y programarlo en el chip CC2510.
+Anleitung zum Bauen der Firmware und zum Programmieren des CC2510.
 
-## Requisitos Previos
+## Voraussetzungen
 
 ### Software
-1.  **SDCC (Small Device C Compiler):** Compilador C optimizado para microcontroladores de 8 bits (8051).
-2.  **Make:** Herramienta de automatización de construcción (GNU Make).
-3.  **SmartRF Flash Programmer (v1):** Software de Texas Instruments para programar el chip (Windows).
+1.  **SDCC (Small Device C Compiler):** optimierter C-Compiler für 8-Bit-Mikrocontroller (8051).
+2.  **Make:** Build-Automatisierung (GNU Make).
+3.  **SmartRF Flash Programmer (v1):** Software von Texas Instruments zum Programmieren des Chips (Windows).
 
 ### Hardware
-1.  **CC-Debugger:** Programador/Depurador oficial de TI para la familia CCxxxx.
-2.  **Cables de Conexión:** Se deben soldar cables a los pads de programación de la etiqueta ESL.
+1.  **CC-Debugger:** offizieller Programmierer/Debugger von TI für die CCxxxx-Familie.
+2.  **Verbindungskabel:** An die Programmier-Pads des ESL-Tags müssen Kabel gelötet werden.
     *   **GND**
-    *   **VCC** (3.3V)
-    *   **DC** (Debug Clock - P2_2)
-    *   **DD** (Debug Data - P2_1)
-    *   **RST** (Reset - P2_0)
+    *   **VCC** (3,3 V)
+    *   **DC** (Debug Clock – P2_2)
+    *   **DD** (Debug Data – P2_1)
+    *   **RST** (Reset – P2_0)
 
-## Compilación
+## Kompilierung
 
-El proyecto incluye un `Makefile` que simplifica el proceso.
+Das Projekt enthält ein `Makefile`, das den Vorgang vereinfacht (es erkennt Linux und Windows automatisch).
 
-### Comandos
-Abrir una terminal en el directorio `firmware/` y ejecutar:
+### Befehle
+Ein Terminal im Projektverzeichnis öffnen und ausführen:
 
-1.  **Compilar todo:**
+1.  **Alles bauen:**
     ```bash
     make
     ```
-    Esto generará el archivo `firmware.hex` si no hay errores.
+    Erzeugt bei fehlerfreiem Lauf die Datei `firmware.hex`.
 
-2.  **Limpiar archivos temporales:**
+2.  **Temporäre Dateien aufräumen:**
     ```bash
     make clean
     ```
-    Elimina archivos `.rel`, `.asm`, `.lst`, `.sym`, etc., generados durante la compilación.
+    Entfernt die beim Kompilieren erzeugten `.rel`-, `.asm`-, `.lst`-, `.sym`-Dateien usw.
 
-## Flasheo
+## Flashen
 
-1.  Conectar el **CC-Debugger** al PC y a la etiqueta ESL (asegurar que la luz del debugger esté en verde).
-2.  Abrir **SmartRF Flash Programmer**.
-3.  Seleccionar "System-on-Chip" en la pestaña superior.
-4.  Debería aparecer el dispositivo "CC2510" en la lista.
-5.  En "Flash image", buscar y seleccionar el archivo `firmware.hex` generado.
-6.  En "Actions", marcar "Erase, program and verify".
-7.  Hacer clic en "Perform actions".
+1.  Den **CC-Debugger** mit PC und ESL-Tag verbinden (die LED am Debugger sollte grün leuchten).
+2.  **SmartRF Flash Programmer** öffnen.
+3.  Im oberen Reiter „System-on-Chip" wählen.
+4.  Das Gerät „CC2510" sollte in der Liste erscheinen.
+5.  Unter „Flash image" die erzeugte Datei `firmware.hex` auswählen.
+6.  Unter „Actions" „Erase, program and verify" anhaken.
+7.  Auf „Perform actions" klicken.
 
-Si todo es correcto, la barra de progreso se completará y el firmware comenzará a ejecutarse en la etiqueta.
+Ist alles korrekt, läuft die Fortschrittsleiste durch und die Firmware startet auf dem Tag.

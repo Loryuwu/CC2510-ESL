@@ -1,48 +1,48 @@
-# 07. Módulo COBS UART
+# 07. COBS-UART-Modul
 
-Este módulo (`src/cobs/cobs.c`) implementa una capa de transporte robusta sobre la conexión serial UART.
+Dieses Modul (`src/cobs/cobs.c`) implementiert eine robuste Transportschicht über der seriellen UART-Verbindung.
 
-## ¿Qué es COBS?
-**Consistent Overhead Byte Stuffing (COBS)** es un algoritmo que permite codificar paquetes de datos de longitud variable de manera que el byte `0x00` nunca aparezca dentro del cuerpo del mensaje. Esto permite usar el byte `0x00` como un delimitador inequívoco de fin de paquete.
+## Was ist COBS?
+**Consistent Overhead Byte Stuffing (COBS)** ist ein Algorithmus, der Datenpakete variabler Länge so kodiert, dass das Byte `0x00` niemals im Nachrichtenkörper vorkommt. Dadurch lässt sich `0x00` als eindeutiger Paketende-Begrenzer verwenden.
 
-### Ventajas
-*   **Sincronización:** Si el receptor pierde bytes o se conecta a mitad de una transmisión, puede resincronizarse fácilmente esperando el siguiente byte `0x00`.
-*   **Eficiencia:** Solo añade una sobrecarga mínima (aprox. 1 byte cada 254 bytes de datos).
+### Vorteile
+*   **Synchronisation:** Verliert der Empfänger Bytes oder steigt mitten in eine Übertragung ein, kann er sich leicht am nächsten `0x00`-Byte resynchronisieren.
+*   **Effizienz:** fügt nur minimalen Overhead hinzu (ca. 1 Byte pro 254 Datenbytes).
 
-## Implementación
+## Implementierung
 
-### Estructura de Estado (`CobsState`)
-Mantiene el estado de la decodificación en curso:
+### Zustandsstruktur (`CobsState`)
+Hält den Zustand der laufenden Dekodierung:
 ```c
 typedef struct {
-  uint8_t packet[MAX_PACKET_SIZE]; // Buffer para el paquete decodificado
-  uint8_t packet_size;             // Tamaño actual del paquete
-  uint8_t packet_index;            // Índice de escritura
-  uint8_t block, code;             // Variables internas del algoritmo
+  uint8_t packet[MAX_PACKET_SIZE]; // Puffer für das dekodierte Paket
+  uint8_t packet_size;             // aktuelle Paketgröße
+  uint8_t packet_index;            // Schreibindex
+  uint8_t block, code;             // interne Variablen des Algorithmus
 } CobsState;
 ```
 
-### Funciones Principales
+### Hauptfunktionen
 
 #### `cobs_init(CobsState *state)`
-Reinicia la máquina de estados para comenzar a recibir un nuevo paquete.
+Setzt die Zustandsmaschine zurück, um ein neues Paket zu empfangen.
 
 #### `cobs_handle(CobsState *state)`
-Esta función debe llamarse periódicamente en el bucle principal.
-1.  Intenta leer un byte de la UART (`uart_read_byte`).
-2.  Si hay dato, procesa el byte según el algoritmo COBS.
-3.  Si el byte recibido es `0x00` y el paquete es válido, retorna `true` indicando que hay un paquete completo en `state->packet`.
+Muss periodisch in der Hauptschleife aufgerufen werden.
+1.  Versucht, ein Byte von der UART zu lesen (`uart_read_byte`).
+2.  Verarbeitet das Byte nach dem COBS-Algorithmus.
+3.  Ist das empfangene Byte `0x00` und das Paket gültig, gibt es `true` zurück — ein vollständiges Paket liegt in `state->packet`.
 
 #### `cobs_send(const uint8_t *data, uint8_t size)`
-Codifica y envía un buffer de datos.
-1.  Recorre los datos calculando los bloques y códigos COBS.
-2.  Envía los bytes codificados por UART.
-3.  Termina enviando un byte `0x00` como delimitador.
+Kodiert einen Datenpuffer und sendet ihn.
+1.  Durchläuft die Daten und berechnet die COBS-Blöcke und -Codes.
+2.  Sendet die kodierten Bytes über UART.
+3.  Schließt mit einem `0x00`-Byte als Begrenzer ab.
 
-## Uso en el Proyecto
-El sistema utiliza COBS para:
-1.  **Depuración:** Enviar mensajes de texto (`cobs_send_str`) que pueden ser visualizados en el PC.
-2.  **Comandos:** Recibir instrucciones complejas desde el PC (ej. "Actualizar imagen", "Configurar RF") sin riesgo de desincronización.
+## Verwendung im Projekt
+Das System nutzt COBS für:
+1.  **Debugging:** Textnachrichten senden (`cobs_send_str`), die am PC angezeigt werden können.
+2.  **Befehle:** komplexe Anweisungen vom PC empfangen (z. B. „Bild aktualisieren", „RF konfigurieren") ohne Gefahr der Desynchronisation.
 
-### Script de Prueba (`cobs_test.py`)
-Se incluye un script en Python que utiliza la librería `cobs` y `pyserial` para comunicarse con el firmware desde un PC, demostrando el envío y recepción de paquetes codificados.
+### Testskript (`cobs_test.py`)
+Enthalten ist ein Python-Skript, das mit den Bibliotheken `cobs` und `pyserial` vom PC aus mit der Firmware kommuniziert und so das Senden und Empfangen kodierter Pakete demonstriert.

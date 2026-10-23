@@ -1,57 +1,57 @@
-# 03. Módulo HAL (Hardware Abstraction Layer)
+# 03. HAL-Modul (Hardware Abstraction Layer)
 
-La Capa de Abstracción de Hardware (HAL) aísla la lógica de la aplicación de los detalles específicos del hardware del CC2510. Se encuentra en el directorio `src/hal/`.
+Die Hardware-Abstraktionsschicht (HAL) trennt die Anwendungslogik von den hardwarespezifischen Details des CC2510. Sie liegt im Verzeichnis `src/hal/`.
 
-## 1. Gestión de Reloj (`clock.c`, `clock.h`)
-El CC2510 dispone de dos osciladores de sistema:
-*   **RC OSC (16 MHz / 13 MHz):** Oscilador interno, bajo consumo pero baja precisión. Es el activo por defecto al encender.
-*   **XOSC (24 MHz - 27 MHz):** Oscilador de cristal externo. Es **obligatorio** para el funcionamiento correcto del Radio (RF) y para obtener baudrates precisos en UART.
+## 1. Takt (`clock.c`, `clock.h`)
+Der CC2510 hat zwei Systemoszillatoren:
+*   **RC-OSC (16 MHz / 13 MHz):** interner Oszillator, sparsam, aber ungenau. Beim Einschalten aktiv.
+*   **XOSC (24–27 MHz):** externer Quarzoszillator. **Pflicht** für korrekten Betrieb des Radios (RF) und für präzise UART-Baudraten.
 
-### Funciones Clave:
-*   `init_clock()`: Realiza la secuencia para encender el oscilador de cristal externo, esperar a que se estabilice y cambiar el reloj del sistema a esta fuente.
-    1.  Enciende el XOSC (`SLEEP &= ~0x04`).
-    2.  Espera a que el bit de estabilidad se active (`while(!(SLEEP & 0x40))`).
-    3.  Cambia la fuente de reloj (`CLKCON = (CLKCON & ~0x40) | 0x00`).
-    4.  Apaga el oscilador RC para ahorrar energía (`SLEEP |= 0x04`).
+### Wichtige Funktionen
+*   `init_clock()`: Schaltet den externen Quarz ein, wartet auf Stabilität und wechselt den Systemtakt auf diese Quelle.
+    1.  XOSC einschalten (`SLEEP &= ~0x04`).
+    2.  Auf das Stabilitäts-Bit warten (`while(!(SLEEP & 0x40))`).
+    3.  Taktquelle wechseln (`CLKCON = (CLKCON & ~0x40) | 0x00`).
+    4.  RC-Oszillator ausschalten, um Strom zu sparen (`SLEEP |= 0x04`).
 
-## 2. Gestión de Tiempo (`time.c`, `time.h`)
-Proporciona utilidades para medir el paso del tiempo y generar retardos. Utiliza el **Timer 1** o **Timer 3** (dependiendo de la implementación específica) o bucles calibrados.
+## 2. Zeit (`time.c`, `time.h`)
+Liefert Werkzeuge zum Messen von Zeit und Erzeugen von Verzögerungen. Nutzt **Timer 1** oder **Timer 3** (je nach Implementierung) bzw. kalibrierte Schleifen.
 
-### Funciones Clave:
-*   `time_init()`: Configura el Timer para generar interrupciones periódicas (tick) o prepara el sistema para contar milisegundos.
-*   `delay_ms(uint16_t ms)`: Genera un retardo bloqueante de `ms` milisegundos. Esencial para secuencias de inicialización de hardware.
-*   `millis()`: Retorna el número de milisegundos transcurridos desde el inicio del sistema (útil para temporización no bloqueante).
-*   `sleep_ms(uint32_t ms)`: Intenta poner el microcontrolador en modo de bajo consumo (PM1/PM2) durante un tiempo determinado.
+### Wichtige Funktionen
+*   `time_init()`: Konfiguriert den Timer für periodische Interrupts (Tick) bzw. bereitet das Zählen von Millisekunden vor.
+*   `delay_ms(uint16_t ms)`: Blockierende Verzögerung von `ms` Millisekunden. Essenziell für Hardware-Initialisierungssequenzen.
+*   `millis()`: Gibt die seit Systemstart vergangenen Millisekunden zurück (nützlich für nicht-blockierendes Timing).
+*   `sleep_ms(uint32_t ms)`: Versucht, den MCU für eine bestimmte Zeit in den Energiesparmodus (PM1/PM2) zu versetzen.
 
-## 3. Control de LEDs (`led.c`, `led.h`)
-Maneja los pines GPIO conectados a los LEDs de la etiqueta.
-*   **Pines Típicos:**
-    *   **Rojo:** P1_5 (Compartido con SPI CLK)
-    *   **Verde:** P1_7 (Compartido con SPI MISO)
-    *   **Azul:** P1_6 (Compartido con SPI MOSI)
-    *   **Blanco:** P2_1 (Dedicado)
+## 3. LED-Steuerung (`led.c`, `led.h`)
+Steuert die an die LEDs angeschlossenen GPIO-Pins.
+*   **Typische Pins:**
+    *   **Rot:** P1_5 (geteilt mit SPI CLK)
+    *   **Grün:** P1_7 (geteilt mit SPI MISO)
+    *   **Blau:** P1_6 (geteilt mit SPI MOSI)
+    *   **Weiß:** P2_1 (dediziert)
 
-> **⚠️ Nota Importante:** Debido a que los LEDs RGB comparten pines con el bus SPI de la memoria Flash, no se pueden usar simultáneamente con operaciones de Flash. El LED Blanco suele ser seguro de usar en cualquier momento.
+> ⚠️ **Wichtiger Hinweis:** Da die RGB-LEDs sich Pins mit dem SPI-Bus der Flash teilen, können sie nicht gleichzeitig mit Flash-Operationen genutzt werden. Die weiße LED ist in der Regel jederzeit sicher nutzbar.
 
-### Macros:
-*   `LED_INIT`: Configura los pines como salida.
-*   `LED_ON` / `LED_OFF` / `LED_TOGGLE`: Controlan el LED Blanco.
-*   `LED_R_ON`, `LED_G_ON`, `LED_B_ON`: Controlan los LEDs RGB (con la precaución mencionada).
+### Makros
+*   `LED_INIT`: Konfiguriert die Pins als Ausgang.
+*   `LED_ON` / `LED_OFF` / `LED_TOGGLE`: Steuern die weiße LED.
+*   `LED_R_ON`, `LED_G_ON`, `LED_B_ON`: Steuern die RGB-LEDs (mit der genannten Vorsicht).
 
 ## 4. UART (`uart.c`, `uart.h`)
-El CC2510 tiene dos interfaces USART (USART0 y USART1) que pueden funcionar como UART o SPI.
-Este módulo configura una de ellas (usualmente USART0 Alt 1 o Alt 2) para comunicación serial asíncrona.
+Der CC2510 hat zwei USART-Schnittstellen (USART0 und USART1), die als UART oder SPI arbeiten können.
+Dieses Modul konfiguriert eine davon (meist USART0 Alt 1 oder Alt 2) für asynchrone serielle Kommunikation.
 
-### Configuración Típica:
-*   **Baudrate:** 115200 (depende de `U0BAUD` y `U0GCR`).
-*   **Pines:** P0_2 (RX) y P0_3 (TX) en Alt 1.
+### Typische Konfiguration
+*   **Baudrate:** 115200 (abhängig von `U0BAUD` und `U0GCR`).
+*   **Pins:** P0_2 (RX) und P0_3 (TX) in Alt 1.
 
-### Funciones Clave:
-*   `uart_init()`: Configura los registros `U0CSR`, `U0GCR`, `U0BAUD` y los pines `P0SEL`.
-*   `uart_write(uint8_t byte)`: Envía un byte y espera a que se complete la transmisión.
-*   `uart_read(uint8_t *byte)`: Verifica si hay datos recibidos y los lee.
+### Wichtige Funktionen
+*   `uart_init()`: Konfiguriert die Register `U0CSR`, `U0GCR`, `U0BAUD` und die Pins `P0SEL`.
+*   `uart_write(uint8_t byte)`: Sendet ein Byte und wartet auf den Abschluss der Übertragung.
+*   `uart_read(uint8_t *byte)`: Prüft auf empfangene Daten und liest sie.
 
-## 5. Interrupciones (`isr.h`)
-Define las macros y prototipos para manejar las interrupciones del sistema (RF, DMA, Timers, I/O).
-*   `HAL_ENABLE_INTERRUPTS()`: Habilita interrupciones globales (`EA = 1`).
-*   `HAL_DISABLE_INTERRUPTS()`: Deshabilita interrupciones globales (`EA = 0`).
+## 5. Interrupts (`isr.h`)
+Definiert Makros und Prototypen zur Behandlung der System-Interrupts (RF, DMA, Timer, I/O).
+*   `HAL_ENABLE_INTERRUPTS()`: Aktiviert globale Interrupts (`EA = 1`).
+*   `HAL_DISABLE_INTERRUPTS()`: Deaktiviert globale Interrupts (`EA = 0`).

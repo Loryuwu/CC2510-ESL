@@ -1,71 +1,72 @@
-# 02. Estructura del Proyecto
+# 02. Projektstruktur
 
-Este documento detalla la organización de los archivos y directorios del proyecto, explicando el propósito de cada componente.
+Dieses Dokument beschreibt die Organisation der Dateien und Verzeichnisse und den Zweck jeder Komponente.
 
-## Árbol de Directorios
+## Verzeichnisbaum
 ```
-firmware/
-├── Makefile                # Script de compilación automatizada
-├── README.md               # Documentación rápida original
-├── cobs_test.py            # Script Python para pruebas de comunicación serial
-├── firmware.hex            # Binario compilado (salida)
-├── src/                    # Código fuente del firmware
-│   ├── main.c              # Punto de entrada y lógica principal
-│   ├── hal/                # Capa de Abstracción de Hardware (HAL)
-│   │   ├── clock.c/h       # Configuración del reloj del sistema
-│   │   ├── hal.h           # Macros y definiciones generales
-│   │   ├── isr.h           # Definiciones de interrupciones
-│   │   ├── led.c/h         # Control de LEDs
-│   │   ├── time.c/h        # Funciones de tiempo (delay, millis)
-│   │   └── uart.c/h        # Driver de comunicación serial
-│   ├── display/            # Drivers de pantalla
-│   │   └── epd.c/h         # Controlador para pantalla E-Paper
-│   ├── flash/              # Drivers de memoria
-│   │   └── flash.c/h       # Controlador para Flash SPI externa
-│   ├── rf/                 # Drivers de Radio
-│   │   └── rf.c/h          # Controlador del transceptor RF
-│   ├── cobs/               # Protocolos de comunicación
-│   │   └── cobs.c/h        # Implementación de codificación COBS
-│   └── image_data/         # Datos estáticos
-│       └── image.h         # Arrays de bytes con imágenes de prueba
-├── doc/                    # Documentación técnica y datasheets
-└── img/                    # Imágenes para documentación
+CC2510-ESL/
+├── Makefile                # Build-Skript (plattformübergreifend)
+├── README.md               # Kurzdokumentation (Deutsch)
+├── README.es.md            # spanisches Original
+├── cobs_test.py            # Python-Skript zum Testen der seriellen Kommunikation
+├── firmware.hex            # kompiliertes Binary (Ausgabe)
+├── src/                    # Firmware-Quellcode
+│   ├── main.c              # Einstiegspunkt + Demo-Auswahl
+│   ├── hal/                # Hardware Abstraction Layer (HAL)
+│   │   ├── clock.c/h       # Systemtakt-Konfiguration
+│   │   ├── hal.h           # allgemeine Makros und Definitionen
+│   │   ├── isr.h           # Interrupt-Definitionen
+│   │   ├── led.c/h         # LED-Steuerung
+│   │   ├── time.c/h        # Zeitfunktionen (delay, millis)
+│   │   └── uart.c/h        # serieller Treiber
+│   ├── display/            # Display-Treiber
+│   │   └── epd.c/h         # E-Paper-Controller
+│   ├── flash/              # Speicher-Treiber
+│   │   └── flash.c/h       # Treiber für externe SPI-Flash
+│   ├── rf/                 # Radio-Treiber
+│   │   └── rf.c/h          # RF-Transceiver-Treiber
+│   ├── cobs/               # Kommunikationsprotokolle
+│   │   └── cobs.c/h        # COBS-Kodierung
+│   └── image_data/         # statische Daten
+│       └── image.h         # Byte-Arrays mit Testbildern
+├── doc/                    # technische Doku und Datenblätter
+└── img/                    # Bilder für die Dokumentation
 ```
 
-## Descripción de Módulos
+## Modulbeschreibung
 
 ### 1. `src/main.c`
-Es el archivo principal del firmware. Contiene la función `main()` que:
-1.  Inicializa el reloj y los periféricos (HAL).
-2.  Ejecuta secuencias de prueba (definidas por bloques `#if`).
-3.  Contiene el bucle infinito (`while(1)`) que gestiona la lógica de la aplicación (ej. esperar paquetes RF, actualizar pantalla).
+Die Hauptdatei der Firmware. Enthält die Funktion `main()`, die:
+1.  Takt und Peripherie (HAL) initialisiert,
+2.  Testsequenzen ausführt (über das Makro `DEMO` ausgewählt),
+3.  die Endlosschleife (`while(1)`) mit der Anwendungslogik enthält (z. B. auf RF-Pakete warten, Display aktualisieren).
 
 ### 2. `src/hal/` (Hardware Abstraction Layer)
-Contiene los drivers de bajo nivel que interactúan directamente con los registros del CC2510.
-*   **clock**: Configura los osciladores. El CC2510 arranca con un oscilador RC interno (impreciso) y debe cambiar al cristal externo para usar RF y UART correctamente.
-*   **led**: Abstrae el control de los pines conectados a los LEDs.
-*   **uart**: Maneja la configuración del puerto serial (baudrate, pines) y el envío/recepción de bytes.
-*   **time**: Proporciona funciones de retardo bloqueante (`delay_ms`) y conteo de tiempo (`millis`) usando Timers.
+Enthält die Low-Level-Treiber, die direkt mit den Registern des CC2510 arbeiten.
+*   **clock**: Konfiguriert die Oszillatoren. Der CC2510 startet mit einem internen RC-Oszillator (ungenau) und muss für RF und UART auf den externen Quarz umschalten.
+*   **led**: Abstrahiert die Steuerung der LED-Pins.
+*   **uart**: Konfiguriert den seriellen Port (Baudrate, Pins) und sendet/empfängt Bytes.
+*   **time**: Liefert blockierende Verzögerungen (`delay_ms`) und Zeitzählung (`millis`) über Timer.
 
 ### 3. `src/display/`
-Contiene la lógica específica para controlar la pantalla E-Ink.
-*   **epd**: Implementa el protocolo SPI por software o hardware para enviar comandos y datos al controlador de la pantalla. Maneja la secuencia de encendido, las Look-Up Tables (LUTs) si son necesarias, y el refresco del display.
+Enthält die Logik zur Ansteuerung des E-Ink-Displays.
+*   **epd**: Implementiert das SPI-Protokoll (Software oder Hardware), um Befehle und Daten an den Controller zu senden. Verwaltet die Einschaltsequenz, ggf. Look-Up-Tables (LUTs) und den Refresh.
 
 ### 4. `src/rf/`
-Maneja el radio de 2.4 GHz.
-*   **rf**: Configura los registros del radio (frecuencia, potencia, modulación), gestiona el DMA para transferencias rápidas de paquetes y controla la máquina de estados del radio (RX/TX/IDLE).
+Verwaltet das 2,4-GHz-Radio.
+*   **rf**: Konfiguriert die Radio-Register (Frequenz, Leistung, Modulation), steuert den DMA für schnelle Pakettransfers und die Zustandsmaschine des Radios (RX/TX/IDLE).
 
 ### 5. `src/flash/`
-Controlador para la memoria Flash externa.
-*   **flash**: Implementa comandos SPI estándar (JEDEC) para leer ID, leer datos, escribir páginas y borrar sectores de la memoria Winbond.
+Treiber für die externe Flash.
+*   **flash**: Implementiert Standard-SPI-Befehle (JEDEC) zum Lesen der ID, Lesen von Daten, Beschreiben von Seiten und Löschen von Sektoren der Winbond-Flash.
 
 ### 6. `src/cobs/`
-Implementa el algoritmo **Consistent Overhead Byte Stuffing**.
-*   **cobs**: Permite empaquetar datos para su transmisión serial, delimitando los paquetes con un byte `0x00` sin riesgo de que los datos contengan ese byte, lo que facilita la sincronización y recuperación de errores en la comunicación.
+Implementiert den Algorithmus **Consistent Overhead Byte Stuffing**.
+*   **cobs**: Verpackt Daten für die serielle Übertragung und grenzt Pakete mit einem `0x00`-Byte ab, ohne dass dieses Byte in den Nutzdaten auftauchen kann — das erleichtert Synchronisation und Fehlererholung.
 
 ### 7. `Makefile`
-Es el script utilizado por la herramienta `make` para compilar el proyecto. Define:
-*   El compilador a usar (`sdcc`).
-*   Los archivos fuente a compilar.
-*   Las banderas de compilación (flags).
-*   Las reglas para generar el archivo `.hex` final.
+Das von `make` genutzte Build-Skript. Definiert:
+*   den Compiler (`sdcc`),
+*   die zu kompilierenden Quelldateien,
+*   die Compiler-Flags,
+*   die Regeln zur Erzeugung der finalen `.hex`-Datei.

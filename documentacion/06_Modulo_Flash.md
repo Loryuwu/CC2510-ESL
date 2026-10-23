@@ -1,42 +1,42 @@
-# 06. Módulo Flash Externa
+# 06. Externes Flash-Modul
 
-Este módulo (`src/flash/flash.c`) permite leer y escribir en la memoria Flash SPI externa (Winbond W25X10CL).
+Dieses Modul (`src/flash/flash.c`) ermöglicht Lesen und Schreiben der externen SPI-Flash (Winbond W25X10CL).
 
-## Interfaz de Hardware
-La memoria comparte el bus SPI con los LEDs RGB, lo que requiere una gestión cuidadosa de los pines.
-*   **CS (Chip Select):** P1_4 (Salida)
-*   **CLK (Clock):** P1_5 (Periférico SPI / LED Rojo)
-*   **MOSI (Data In):** P1_6 (Periférico SPI / LED Azul)
-*   **MISO (Data Out):** P1_7 (Periférico SPI / LED Verde)
+## Hardware-Schnittstelle
+Der Speicher teilt sich den SPI-Bus mit den RGB-LEDs, was eine sorgfältige Pin-Verwaltung erfordert.
+*   **CS (Chip Select):** P1_4 (Ausgang)
+*   **CLK (Clock):** P1_5 (SPI-Peripherie / rote LED)
+*   **MOSI (Data In):** P1_6 (SPI-Peripherie / blaue LED)
+*   **MISO (Data Out):** P1_7 (SPI-Peripherie / grüne LED)
 
-> **Conflicto:** Al activar el periférico SPI (USART1 Alt 2), los pines P1_5, P1_6 y P1_7 dejan de funcionar como GPIO para los LEDs.
+> **Konflikt:** Sobald die SPI-Peripherie (USART1 Alt 2) aktiv ist, funktionieren P1_5, P1_6 und P1_7 nicht mehr als GPIO für die LEDs.
 
-## Implementación SPI
-El driver utiliza la **USART1** en modo **SPI Master Alt 2**.
-*   **Configuración:** `PERCFG |= 0x02` (U1CFG Alt 2).
-*   **Función de Transferencia:** `spi_transfer(uint8_t data)` escribe un byte en `U1DBUF` y espera a que se complete el intercambio.
+## SPI-Implementierung
+Der Treiber nutzt **USART1** im Modus **SPI Master Alt 2**.
+*   **Konfiguration:** `PERCFG |= 0x02` (U1CFG Alt 2).
+*   **Transferfunktion:** `spi_transfer(uint8_t data)` schreibt ein Byte in `U1DBUF` und wartet auf den Abschluss des Austauschs.
 
-## Comandos Soportados
-El driver implementa un subconjunto de los comandos estándar JEDEC:
+## Unterstützte Befehle
+Der Treiber implementiert eine Teilmenge der Standard-JEDEC-Befehle:
 
-1.  **Lectura de ID (`spi_flash_read_id`)**
-    *   Envía `0x90` (Manufacturer ID).
-    *   Retorna el ID del fabricante y del dispositivo (Winbond = 0xEF). Útil para verificar conexión.
+1.  **ID lesen (`spi_flash_read_id`)**
+    *   Sendet `0x90` (Manufacturer ID).
+    *   Liefert Hersteller- und Geräte-ID (Winbond = 0xEF). Nützlich zur Verbindungsprüfung.
 
-2.  **Lectura de Datos (`spi_flash_read`)**
-    *   Comando `0x03`.
-    *   Lee `len` bytes desde una dirección de 24 bits.
+2.  **Daten lesen (`spi_flash_read`)**
+    *   Befehl `0x03`.
+    *   Liest `len` Bytes ab einer 24-Bit-Adresse.
 
-3.  **Escritura (`spi_flash_write`)**
-    *   Habilita escritura (`0x06` Write Enable).
-    *   Usa "Page Program" (`0x02`) para escribir datos.
-    *   **Nota:** Las memorias Flash requieren que el área esté borrada (0xFF) antes de escribir.
+3.  **Schreiben (`spi_flash_write`)**
+    *   Aktiviert Schreiben (`0x06` Write Enable).
+    *   Nutzt „Page Program" (`0x02`) zum Schreiben.
+    *   **Hinweis:** Flash-Speicher setzen voraus, dass der Bereich vor dem Schreiben gelöscht (0xFF) ist.
 
-4.  **Borrado (`spi_flash_sector_erase`, `spi_flash_chip_erase`)**
-    *   Sector Erase (`0x20`): Borra un sector de 4KB.
-    *   Chip Erase (`0xC7`): Borra toda la memoria.
-    *   Estas operaciones toman tiempo; el driver verifica el registro de estado (bit WIP) para esperar a que terminen (`spi_flash_wait_busy`).
+4.  **Löschen (`spi_flash_sector_erase`, `spi_flash_chip_erase`)**
+    *   Sector Erase (`0x20`): löscht einen 4-KB-Sektor.
+    *   Chip Erase (`0xC7`): löscht den gesamten Speicher.
+    *   Diese Operationen dauern; der Treiber prüft das Statusregister (Bit WIP) und wartet auf das Ende (`spi_flash_wait_busy`).
 
 5.  **Power Down (`spi_flash_power_down`)**
-    *   Pone la memoria en modo de ultra-bajo consumo (`0xB9`).
-    *   Debe despertarse (`0xAB`) antes de volver a usarla.
+    *   Versetzt den Speicher in den Ultra-Niedrigverbrauchsmodus (`0xB9`).
+    *   Muss vor erneuter Nutzung aufgeweckt werden (`0xAB`).

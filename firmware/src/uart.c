@@ -1,0 +1,137 @@
+/*
+ * Interrupt-getriebener UART-Treiber ueber USART1 (Alt 1, P0_4 TX / P0_5 RX).
+ * Uebernommen aus dem Loryuwu-Fork, an die PriceTag-Firmware angepasst.
+ *
+ * ACHTUNG Pin-Konflikte: P0_4 ist zugleich NFC-SDA, P0_5 zugleich EPD-CLK.
+ * USART1 teilt sich das Modul mit dem Flash-Treiber. UART ist daher ein
+ * reines Debug-Werkzeug und laeuft nicht gleichzeitig mit NFC/Flash/EPD.
+ */
+#include "uart.h"
+#include <stdbool.h>
+#include <string.h>
+
+#define UART_TX_BUFFER_SIZE 128
+#define UART_RX_BUFFER_SIZE 128
+
+uint8_t __xdata tx_buffer[UART_TX_BUFFER_SIZE];
+volatile uint8_t __xdata tx_buffer_head = 0;
+volatile uint8_t __xdata tx_buffer_tail = 0;
+volatile bool __xdata tx_in_progress = false;
+volatile bool __xdata tx_buffer_full = false;
+
+uint8_t __xdata rx_buffer[UART_TX_BUFFER_SIZE];
+volatile uint8_t __xdata rx_buffer_head = 0;
+volatile uint8_t __xdata rx_buffer_tail = 0;
+volatile bool __xdata rx_buffer_full = false;
+
+INTERRUPT(uart_tx_isr, UTX1_VECTOR) {
+  UTX1IF = 0;
+
+  if (tx_buffer_head == tx_buffer_tail && !tx_buffer_full) {
+    // buffer is empty, nothing to send
+    tx_in_progress = false;
+  } else {
+    U1DBUF = tx_buffer[tx_buffer_tail];
+    tx_buffer_tail = (tx_buffer_tail + 1) % UART_TX_BUFFER_SIZE;
+    tx_buffer_full = false;
+  }
+}
+
+INTERRUPT(uart_rx_isr, URX1_VECTOR) {
+  URX1IF = 0;
+
+  if (rx_buffer_full) {
+    // buffer is full, discard the byte, flag an error
+    return;
+  }
+
+  rx_buffer[rx_buffer_head] = U1DBUF;
+  rx_buffer_head = (rx_buffer_head + 1) % UART_RX_BUFFER_SIZE;
+  rx_buffer_full = rx_buffer_head == rx_buffer_tail;
+}
+
+void uart_init(void) {
+  // USART1 use ALT1
+  PERCFG &= ~BV(1);
+  // USART1 has priority when USART0 is also enabled
+  P2DIR = (P2DIR & 0x3F) | BV(6);
+  // configure pin P0_4 (TX) and P0_5 (RX) as special function:
+  P0SEL |= BV(4) | BV(5);
+
+  P0DIR |= BV(4);         // make tx pin output
+  P0DIR &= ~BV(5);        // make rx pin input
+  U1CSR |= BV(7) | BV(6); // uart mode + enable RX
+  U1UCR = BV(1);          // high stop bit
+
+  // 115200 baud, 26MHz clock
+  U1BAUD = 34;
+  U1GCR = 12;
+
+  IEN2 |= BV(3); // enable TX interrupt
+  URX1IE = 1;    // enable RX interrupt
+}
+
+void uart_disable(void) {
+  URX1IE = 0;    // disable RX interrupt
+  IEN2 &= ~BV(3); // disable TX interrupt
+  U1CSR = 0;     // disable UART
+
+  // Release pins P0_4 (TX) and P0_5 (RX) from Peripheral control
+  P0SEL &= ~(BV(4) | BV(5));
+}
+
+void uart_send_byte(uint8_t data) {
+  while (tx_buffer_full) {
+    // buffer is full, wait for a byte to be sent
+  }
+
+  tx_buffer[tx_buffer_head] = data;
+
+  HAL_CRITICAL_STATEMENT({
+    tx_buffer_head = (tx_buffer_head + 1) % UART_TX_BUFFER_SIZE;
+    tx_buffer_full = tx_buffer_head == tx_buffer_tail;
+  });
+
+  if (!tx_in_progress) {
+    // kick off a transmission
+    tx_in_progress = true;
+    UTX1IF = 1;
+  }
+}
+
+void uart_send(const uint8_t *data, size_t len) {
+  while (len--) {
+    uart_send_byte(*data++);
+  }
+}
+
+void uart_send_str(const char *str) {
+  uart_send((const uint8_t *)str, strlen(str));
+}
+
+uint8_t uart_available(void) {
+  uint8_t head, tail;
+  HAL_CRITICAL_STATEMENT({
+    head = rx_buffer_head;
+    tail = rx_buffer_tail;
+  });
+  if (head >= tail) {
+    return head - tail;
+  }
+  return UART_RX_BUFFER_SIZE - tail + head;
+}
+
+bool uart_read_byte(uint8_t *data) {
+  bool isBufferEmpty;
+  HAL_CRITICAL_STATEMENT({
+    isBufferEmpty = rx_buffer_head == rx_buffer_tail && !rx_buffer_full;
+  });
+  if (isBufferEmpty) {
+    return false;
+  }
+
+  *data = rx_buffer[rx_buffer_tail];
+  rx_buffer_tail = (rx_buffer_tail + 1) % UART_RX_BUFFER_SIZE;
+  rx_buffer_full = false;
+  return true;
+}

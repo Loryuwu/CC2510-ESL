@@ -1,49 +1,49 @@
-# 05. Módulo RF (Radiofrecuencia)
+# 05. RF-Modul (Funk)
 
-El CC2510 integra un transceptor de RF compatible con 2.4 GHz (similar al CC2500). El módulo `src/rf/rf.c` gestiona la configuración y transmisión de datos.
+Der CC2510 integriert einen 2,4-GHz-RF-Transceiver (ähnlich dem CC2500). Das Modul `src/rf/rf.c` verwaltet Konfiguration und Datenübertragung.
 
-## Características Configuredas
-*   **Frecuencia:** 2433 MHz (Configurable via registros `FREQ2`, `FREQ1`, `FREQ0`).
-*   **Modulación:** MSK (Minimum Shift Keying).
-*   **Velocidad de Datos:** 250 kBaud.
-*   **Potencia:** 0 dBm (Configurable en `PA_TABLE0`).
-*   **Paquetes:** Longitud variable, con CRC activado.
+## Konfigurierte Eigenschaften
+*   **Frequenz:** 2433 MHz (über die Register `FREQ2`, `FREQ1`, `FREQ0` einstellbar).
+*   **Modulation:** MSK (Minimum Shift Keying).
+*   **Datenrate:** 250 kBaud.
+*   **Leistung:** 0 dBm (einstellbar in `PA_TABLE0`).
+*   **Pakete:** variable Länge, mit aktiviertem CRC.
 
-## Arquitectura del Driver
+## Treiberarchitektur
 
 ### 1. DMA (Direct Memory Access)
-El driver utiliza el controlador DMA del CC2510 para mover datos entre la memoria RAM y el buffer del radio (RFD) automáticamente. Esto libera a la CPU y permite transferencias rápidas.
-*   **Canal DMA 0:** Configurado dinámicamente para TX o RX.
-*   **TX:** RAM -> RFD.
-*   **RX:** RFD -> RAM.
+Der Treiber nutzt den DMA-Controller des CC2510, um Daten automatisch zwischen RAM und dem Radio-Puffer (RFD) zu bewegen. Das entlastet die CPU und ermöglicht schnelle Transfers.
+*   **DMA-Kanal 0:** dynamisch für TX oder RX konfiguriert.
+*   **TX:** RAM → RFD.
+*   **RX:** RFD → RAM.
 
-### 2. Máquina de Estados (`RFST`)
-El radio se controla enviando comandos estroboscópicos (Strobe Commands) al registro `RFST`:
-*   `RFST_SIDLE` (0x04): Pone el radio en modo inactivo (Idle).
-*   `RFST_STX` (0x03): Inicia la transmisión.
-*   `RFST_SRX` (0x02): Inicia la recepción.
+### 2. Zustandsmaschine (`RFST`)
+Das Radio wird über Strobe-Befehle an das Register `RFST` gesteuert:
+*   `RFST_SIDLE` (0x04): Radio in den Leerlauf (Idle) versetzen.
+*   `RFST_STX` (0x03): Senden starten.
+*   `RFST_SRX` (0x02): Empfangen starten.
 
-### 3. API Principal
+### 3. Haupt-API
 
 #### `rf_init()`
-Configura todos los registros del radio (Modem, Frecuencia, AGC, etc.) con valores precalculados (generalmente obtenidos con SmartRF Studio). Configura el DMA y deja el radio en modo RX por defecto.
+Konfiguriert alle Radio-Register (Modem, Frequenz, AGC usw.) mit vorberechneten Werten (üblicherweise aus SmartRF Studio). Richtet den DMA ein und lässt das Radio standardmäßig im RX-Modus.
 
 #### `rf_send_packet(uint8_t *data, uint8_t len)`
-1.  Prepara un buffer interno con el formato `[Longitud, Datos...]`.
-2.  Pone el radio en IDLE.
-3.  Configura el DMA para transferir desde el buffer al registro `X_RFD`.
-4.  Activa el DMA.
-5.  Envía el comando `STX`. El radio solicitará datos al DMA a medida que transmite.
-6.  Espera a que termine la transmisión (Interrupción `RFIF_IRQ_DONE`).
-7.  Vuelve a modo RX.
+1.  Bereitet einen internen Puffer im Format `[Länge, Daten...]` vor.
+2.  Versetzt das Radio in IDLE.
+3.  Konfiguriert den DMA für den Transfer vom Puffer ins Register `X_RFD`.
+4.  Aktiviert den DMA.
+5.  Sendet den Befehl `STX`. Das Radio fordert die Daten während des Sendens über DMA an.
+6.  Wartet auf das Ende der Übertragung (Interrupt `RFIF_IRQ_DONE`).
+7.  Kehrt in den RX-Modus zurück.
 
 #### `rf_receive_packet(uint8_t *buffer, uint8_t max_len)`
-Verifica si se ha recibido un paquete completo.
-1.  Comprueba el flag de interrupción `RFIF_IRQ_DONE` o el estado del DMA.
-2.  Si hay datos, lee la longitud del primer byte.
-3.  Copia los datos del buffer interno del driver al buffer del usuario.
-4.  Re-arma el modo RX para el siguiente paquete.
+Prüft, ob ein vollständiges Paket empfangen wurde.
+1.  Prüft das Interrupt-Flag `RFIF_IRQ_DONE` bzw. den DMA-Status.
+2.  Liest bei vorhandenen Daten die Länge aus dem ersten Byte.
+3.  Kopiert die Daten vom internen Puffer in den Benutzerpuffer.
+4.  Scharfschalten des RX-Modus für das nächste Paket.
 
-## Consideraciones
-*   La calibración del sintetizador de frecuencia (`FSCAL`) se realiza automáticamente al pasar de IDLE a TX/RX (configurado en `MCSM0`).
-*   Es crucial que el oscilador de cristal (XOSC) esté estable antes de usar el radio.
+## Hinweise
+*   Die Kalibrierung des Frequenzsynthesizers (`FSCAL`) erfolgt automatisch beim Übergang von IDLE zu TX/RX (konfiguriert in `MCSM0`).
+*   Der Quarzoszillator (XOSC) muss stabil sein, bevor das Radio genutzt wird.

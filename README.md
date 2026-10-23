@@ -1,166 +1,87 @@
-# Firmware para CC2510
-![ESLs](./img/ESLs.jpg)
+# CC2510-ESL / PriceTag — ESL als Home-Assistant-Display
 
-Este es un proyecto para el control de estos tags Epaper de 2,2" o 4,2" (tambien hay algunos 2,6 que traen este MCU, pero no todos)
-Es un script para el control del chip CC2510 de Texas instruments, MCU basado en el antiguo 8051 + transceptor de RF a 2,4GhZ
+> **ℹ️ Herkunft & Attribution:** Dieses Repo ist ein **Fork von [Loryuwu/CC2510-ESL](https://github.com/Loryuwu/CC2510-ESL)** (das wiederum auf [@andrei-tatar](https://github.com/andrei-tatar/imagotag-hack) aufbaut). Es enthält eine **eigenständige Weiterentwicklung** („PriceTag") der Firmware und ein ESP32-Gateway, mit dem ein CC2510-Preisschild als **Home-Assistant-Display** über Funk läuft. Aus dem ursprünglichen Fork übernommene Module sind als solche gekennzeichnet; alle Credits siehe [unten](#-credits).
+>
+> 🇪🇸 Spanisches Original-README des Ur-Forks: [README.es.md](./README.es.md) · 📄 ausführliche Projektnotizen: [PROJECT.md](./PROJECT.md)
 
-Este será un proyecto unicamente de pruebas y desarrollo, no de algo final, pretendo crear otros repos para los que serán el AP, los satelites y el programa que controlará todo el sistema, que serán los que realmente harán el trabajo, pero aun no estoy listo ni tengo las estructuras suficientes para un proyecto final, se puede considerar esa como le version beta, en todo caso, cuando se suban, este repo se actualizará para poner los enlaces a esos repos.
+Ein Imagotag-/Vusion-ESL mit **CC2510** + **IL0373-E-Ink** (296×152, 3 Farben) zeigt Wetter, Energie und Status aus Home Assistant an.
 
-Aún asi, ya comensé el desarrollo de los firmwares de control, AP y Satelites, estan en proceso de mejora, depuracion y busqueda de fallos (los cuales son bastantes) pero ya es algo que se viene.
+## 🧭 Architektur
 
-## ✨ Documentación
-- [CC2510 - MCU + radio - 8051](./doc/cc2510.pdf) - Corazon del proyecto.
-- [NT3H2111 - NFC](./doc/NT3H2111_2211.pdf) - Chip programable por I2C.
-- [Pervasives Display - 2.13"/4,17" EPD display](./doc/Pervasives.pdf) - La pagina de pervasives al parecer descontinuó las screens usadas (Spectra Red) que eran las de 3 colores "SE2xxxJS0E1" (donde "xxx" es el tamaño de la screen) pero incluí 2 librerías en .zip para el manejo de estas, una mas pesada y llena de funciones a mi parecer inutiles, pero facil de usar e intuitiva, y otra con lo justo y mucho mas liviana.
-- [TPS61071 - boost converter](./doc/tps61071.pdf) - Usado para dar energía a los leds.
-- [W25X10CL - Winbond 1Mbits NOR SPI flash](./doc/w25x10cl.pdf) - Memoria flash externa por SPI
-
-- [Documentación](./documentacion/01_Resumen_General.md) - Tengo tambien un directorio "documentacion" hecho por ia, por lo que puede tener errores o no estar alineado con el codigo, pero explica bastante bien el funcionamiento de todo el proyecto como una "guia de uso", no se fíen al 100% de lo ahí escrito, pero para tener una idea, lo revisé y es muy preciso, pero no exacto, cualquier archivo de documentacion presente en este proyecto, dentro de ese directorio o no, fue creado por ia, usar unicamente como guia, no como fuente confiable del funcionamiento del proyecto, este es el unico archivo creado 100% por mí y que contiene a grandes rasgos, puntos importantes a tener en cuenta sobre el funcionamiento del proyecto.
-
-## 📦 Requisitos
-Lista de herramientas necesarias:
-- Lenguaje o entorno (C, SDCC, Make)
-  * SDCC utilizado para compilar proyecto en .hex listo para flashear, en este proyecto hay un "Makefile" que automatiza la compilacion, deberás instalar "Make"
-- Hardware asociado
-    * Ahora, para flashear, necesitaras un CC-Debugger, hay metodos para utilizar un arduino nano o un esp32 como Debugger, pero personalmente recomiendo ahorrarse el dolor de cabeza que significa esto e ir por la apuesta segura, en Aliexpress se pueden encontrar a unos 10 Dolares, creeme que tu salud mental lo agradecerá.
-    ![Debugger](./img/CCDebugger.jpg) imagen referencial.
-- Software:
-    * SmartRF Studio (Recomendado)
-        * Software entregado por texas instruments de manera gratuita para probar y configurar comunicación por RF sin necesidad de programar el chip, sirve para exportar todas las variables necesarias para la configuracion del modo RF del CC2510 o cualquier chip de la familia CCxxxx
-    * SmartRF Flash Programmer (Necesario)
-        * No descargar V2, tambien es entregado de manera gratuita, pero será necesaria la creacion de una cuenta en la pagina de Texas Instruments. Este software es para flashear el CC2510 con el .hex creado usando el CC-Debugger.
-    * SmartRF Packet Sniffer (Opcional)
-        * Software entregado por texas instruments de manera gratuita es similar a SmartRF Studio pero para la captura de paquetes RF (o algo asi, nunca lo usé).
-
-## 🚀 Compilación
-Teniendo todo lo necesario, para compilar simplemente ejecutamos los siguientes comandos en Shell:
-```shell
-PS C:\Users\Lory\Desktop\firmware> make
 ```
-Donde deberás ver que termine en algo similar a:
-```shell
-  packihx firmware.ihx > firmware.hex
-  packihx: read 378 lines, wrote 721: OK.
-PS C:\Users\Lory\Desktop\firmware>
+Home Assistant ──(MQTT/WiFi)──▶ ESP32-S3 + nRF24L01+PA/LNA ──(250 kbps, ch76)──▶ CC2510 ──SPI──▶ E-Ink
 ```
-Luego para borrar archivos que se crean durante la compilación, ejecuta:
-```shell
-PS C:\Users\Lory\Desktop\firmware> make clean
-  Limpiando archivos generados...
-  Limpieza completa.
-PS C:\Users\Lory\Desktop\firmware>
+
+Das Gateway rendert das komplette Bild (Adafruit GFX), komprimiert es per RLE und streamt es zuverlässig (seq/ACK/Retransmit) zum Tag. Der Tag schläft zwischen Updates (PM2) und pollt das Gateway alle 5 Minuten — das E-Ink hält das Bild stromlos.
+
+## 📊 Status
+
+- ✅ CC2510-Radio **nRF24-kompatibel** (GFSK 250 kbps, ch76, AFC, CRC-8) — beide Funkrichtungen verifiziert
+- ✅ E-Ink-Treiber mit Font/Icons + **RLE-Vollbild-Streaming**
+- ✅ **NFC-Identität** (UID + Label) + **Enrollment** (Gateway vergibt Adresse)
+- ✅ **Deep-Sleep (PM2)** mit 5-Min-Poll-Zyklus
+- ✅ ESP32-Gateway mit **Wetter** (Open-Meteo), Enroll-Registry, Link-Metriken
+- ✅ **CC-Debugger auf ESP32-S3 portiert** (Flashen ohne dedizierten Debugger)
+- ⏳ offen: direkte **Home-Assistant-MQTT-Anbindung** (aktuell holt das Gateway das Wetter selbst) — siehe [PROJECT.md](./PROJECT.md), Phase 2
+
+## 🗂️ Projektstruktur
+
+```text
+CC2510-ESL/
+├── firmware/             # CC2510-Firmware (SDCC)
+│   ├── src/
+│   │   ├── radio.c/.h     nRF24-kompatibles Radio (AFC, CRC-8)
+│   │   ├── epd.c/.h       IL0373-Treiber (Font, Icons, RLE-Streaming)
+│   │   ├── nfc.c/.h       NFC-Identität (UID/Label)
+│   │   ├── icons.c/.h, delay.c, cc2510.h
+│   │   ├── main_display.c Haupt-Node (Enroll + Bildempfang + Sleep)
+│   │   ├── main_*.c       Test-/Diagnose-Builds (radio, nfc, enroll …)
+│   │   ├── flash.c/.h     ⤷ aus Fork übernommen: W25X10 SPI-Flash
+│   │   ├── uart.c/.h      ⤷ aus Fork übernommen: UART (Debug)
+│   │   ├── cobs.c/.h      ⤷ aus Fork übernommen: COBS-Framing
+│   │   ├── hal_compat.h   Shim, damit die Fork-Module hier kompilieren
+│   │   └── main_flash_test.c / main_cobs_test.c   Demos der Fork-Module
+│   └── Makefile
+├── gateway/              # ESP32-S3 Arduino-Sketches (nRF24)
+│   ├── gateway_weather/  Haupt-Gateway (Wetter, Vollbild-Render + Stream)
+│   └── …                 Diagnose/Tests (carrier, channel_scan, loopback …)
+├── tools/
+│   ├── CCLib_ESP32S3/    CC-Debugger auf ESP32-S3 (Flashen)
+│   └── CCLib/            CC-Debugger-Lib (mit CC2510-Support)
+├── doc/                  # Datenblätter (CC2510, NFC, EPD, Flash, Boost)
+├── documentacion/        # Modul-Doku (DE) — beschreibt die Fork-/Zusatzmodule
+├── img/ · cobs_test.py · PROJECT.md · README.md · LICENSE
 ```
-Y así tendras un nuevo "firmware.hex" en el directorio principal.
-El "Makefile" está diseñado para windows, pero tiene comentada la parte del codigo que lo hace compatible en linux (no se si funcione bien) deberás comentar o borrar la parte para win y descomentar la parte para linux
 
-## ⚡ Flasheo
-Para flashear, deberás conectar el Debugger al chip soldando 5 cables, 2 de alimentacion y los otros 3 de datos (Reloj, datos y reset) (mirar imagenes, detallan de donde sacar las lineas necesarias para esto)
-![Debuggerh](./img/Coneccion.jpg) imagen referencial.
+## 🔧 Firmware bauen (CC2510, SDCC)
 
-## 🔌 Pinout del CC2510
+```bash
+cd firmware
+make display       # Haupt-Node (Enroll + Bildempfang)
+make flash-test    # Demo: externen SPI-Flash erkennen + ID aufs Display
+make cobs-test     # Demo: UART+COBS-Echo (PC-Gegenstelle: cobs_test.py)
+make clean
+```
+Weitere Targets: `radio-tx`, `radio-rx`, `radio-loopback`, `nfc-scan`, `nfc-uid`, `nfc-test`, `nfc-dump`, `enroll`.
 
-### Port 0
-- P0:0 - EPD power enable (active low via a P channel fet)
-- P0:1 - EPD CS (SPI interface chip select)
-- P0:2 - debug port
-- P0:3 - EPD SDI (SPI interface serial data in)
-- P0:4 - SDA to NFC chip and uart TX
-- P0:5 - EPD CLK (SPI interface clock) and uart RX
-- P0:6 - SCL to NFC chip
-- P0:7 - *not connected*
+### Übernommene Zusatzmodule (flash / uart / cobs)
+Aus dem ursprünglichen Loryuwu-Fork wurden **SPI-Flash**, **UART** und **COBS** in die Firmware verdrahtet (angepasst via `hal_compat.h`, Demos `make flash-test` / `make cobs-test`).
+> ⚠️ **Pin-Konflikte:** Der SPI-Flash teilt sich USART1 **und** die Pins mit den RGB-LEDs; UART (P0_4/P0_5) teilt sich die Pins mit NFC-SDA bzw. EPD-CLK. Flash, UART und der Display-Node laufen daher nicht alle gleichzeitig — die Module sind für eigene Builds/Debug gedacht.
 
-### Port 1
-- P1:0 - NFC VCC (seems to power NFC chip and SPI flash)
-- P1:1 - NFC FD (field detection)
-- P1:2 - EPD DC (data/command select for display)
-- P1:3 - EPD BUSY (detect if display busy)
-- P1:4 - SPI flash CS 
-- P1:5 - SPI flash CLK  and Red LED (RGB)
-- P1:6 - SPI flahs MOSI and Blue LED (RGB)
-- P1:7 - SPI flahs MISO and Green LED (RGB)
+## ⚡ Flashen (ohne CC-Debugger)
+Via ESP32-S3 als Debugger (`tools/CCLib_ESP32S3/`), dann vom PC:
+```bash
+python tools/CCLib/Python/cc_write_direct.py <PORT> firmware/display.bin
+```
 
-### Port 2
-- P2:0 - EPD Reset (display reset)
-- P2:1 - debug data and white LED
-- P2:2 - debug clock and LED boost chip enable (TPS61071)
+## 📡 Gateway (ESP32-S3)
+`gateway/gateway_weather/gateway_weather.ino` in der Arduino-IDE öffnen, Bibliotheken „Adafruit GFX" + „RF24" (TMRh20) installieren, oben **WLAN/Standort eintragen** (Platzhalter), flashen.
+> ⚠️ **Keine echten Zugangsdaten committen** — die Felder im Sketch sind absichtlich Platzhalter (`.gitignore` blockt zusätzlich `secrets.h`).
 
-## ⚠️ Ayuda
-Actualmente estoy en este proyecto unicamente como hobbie, la electronica es algo que me apasiona y me gusta hacer, lamentablemente, no soy experto y jamás he hecho ningun curso de programacion o nada parecido, lo que sé es investigando, leyendo y preguntandole a chatGPT (el cual, en este proyeto, poco es lo que ayuda, sinceramente, pero si he logrado entender muchas partes de este codigo gracias a el).
+## 🙏 Credits
+- **[Loryuwu](https://github.com/Loryuwu)** — Ur-Fork [CC2510-ESL](https://github.com/Loryuwu/CC2510-ESL); daraus stammen die Zusatzmodule flash/uart/cobs und die EPD-/NFC-Grundlagen.
+- **[@andrei-tatar](https://github.com/andrei-tatar/imagotag-hack)** — Basis-Reverse-Engineering, auf dem das alles aufbaut.
+- **CCLib** — CC-Debugger-Bibliothek (siehe `tools/CCLib/LICENSE`).
 
-Si alguien por ahí logra avanzar en este proyecto, agradecería mil que se comunique conmigo y me preste ayuda para lograr aprender, avanzar e intercambiar ideas.
-
-
-### 📝 Progreso y estado
-#### ✅ LED funcional:
-funciones clave:
-- `LED_INIT;` - macro que inicializa el LED
-- `LED_BOOST_ON;` - macro que enciende el LED boost (enciende el TPS61071)
-- `LED_BOOST_OFF;` - macro que apaga el LED boost (apaga el TPS61071)
-- `LED_ON;` - macro que enciende el LED blanco
-- `LED_OFF;` - macro que apaga el LED blanco
-- `LED_TOGGLE;` - macro que invierte el estado del LED blanco
-- `LED_G_ON;` - macro que enciende el LED verde
-- `LED_G_OFF;` - macro que apaga el LED verde
-- `LED_G_TOGGLE;` - macro que invierte el estado del LED verde
-- `LED_R_ON;` - macro que enciende el LED rojo
-- `LED_R_OFF;` - macro que apaga el LED rojo
-- `LED_R_TOGGLE;` - macro que invierte el estado del LED rojo
-- `LED_B_ON;` - macro que enciende el LED azul
-- `LED_B_OFF;` - macro que apaga el LED azul
-- `LED_B_TOGGLE;` - macro que invierte el estado del LED azul
-
-Importante!!
-
-Actualmente hay un macro condicional `#define RGB`, si se define, se usan los pines para inicializar los 2 leds (RGB y blanco), si no se define, solo se define el led blanco, ya que los pines para RGB son los mismos que se usan para comunicarse con la flash, por lo que hay conflicto de uso de pines con el led RGB y solo se puede usar el led blanco.
-Si se quiere trabajar con la flash externa, se debe comentar el macro `#define RGB`.
-
-
-#### ✅ EPD funcional:
-funciones clave:
-- `epd_init()` - Inicializa el EPD
-- `epd_clearDisplay()` - Limpia la pantalla enviando 0x00 a toda la pantalla.
-- `epd_globalUpdate(imagenBN, imagenR)` - envia los datos para las imagenes y refresca automaticamente
-- `epd_sendIndexData(index, data, len)` - envia los datos para la imagen
-    * index: 0x10 para informacion blanco y negro, 0x13 para rojo.
-    * data: puntero a memoria con los datos de la imagen.
-    * len: longitud de los datos.
-- `epd_sendColor(index, data, len)` - envia los datos para la imagen
-    * index: 0x10 para informacion blanco y negro, 0x13 para rojo.
-    * data: 0x00 para dejar en blanco, solo envía "vacio" indicar que quieres la pantalla en blanco o que no usarás pixeles del color seleccionado.
-    * len: longitud de los datos.
-- `epd_flushDisplay()` - refresca la pantalla.
-- `epd_powerOn()` - enciende la pantalla.
-- `epd_powerOff()` - apaga la pantalla.
-
-
-#### ✅ COBS funcional:
-se ha logrado implementar un protocolo UART de comunicacion con codificacion COBS (reutilizado completamente desde el proyecto principal), este bus está a los pines P0_4 (TX) y P0_5 (RX).
-Tambien hay un script en Python que permite la comunicacion con el cc2510 a traves de este bus, necesitarás un convertidor TTL-USB para usarlo. e instalar la libreria cobs con el comando `pip install cobs pyserial`.
-Al ejecutar el script, se puede enviar comandos al cc2510 y recibir el mismo mensaje de respuesta.
-
-Problema!! al igual como pasa con los leds RGB, el bus uart se usa para comunicacion con la EPD y con el chip NFC, por lo que se debe implementar una estrategia para evitar conflictos de uso de pines. 
-
-#### ✅ RF funcional (a medias):
-- ya está disponible `rf_init()`, `rf_send_packet()` y `rf_receive_packet()`, pero en algunos casos las funciones quedan colgadas, no se exactamente por que, he intentado implementar varias estrategias para evitar esto, timeouts, wachdog, etc, pero aun no logro que funcione correctamente.
-
-
-#### ❗ Flash En desarrollo:
-- Estoy intentando implementar esta funcion de comunicacion con la flash externa, pero sin una comunicacion directa con el CC2510 es complicado saber exactamente que está ocurriendo, normalmente uso los Leds como mensajes debug visuales (led azul para mostrar funcion corriendo, led verde para mostrar exito, rojo error, pero este chip usa los mismos pines de los leds como bus de datos al flash, por lo que no puedo usarlos para mensajes debug visuales). Mi proximo intento será crear una comunicacion uart por software (ya que el cc2510 no tiene un puerto uart nativo) pero aun no estoy seguro de como hacer esto.
-
-ACTUALIZACION: creo que el problema unicamente es que nunca encendí el pin de alimentacion de la flash, por lo que no se puede comunicar con ella, aun no la reviso completamente.
-
-#### ❗ DeepSleep no funcional:
-- Hay funciones de `delay_ms()` para espera bloqueante y `Sleep_ms()` para dormir el chip, pero el Sleep no genera exactamente un bajo consumo, el chip sigue consumiendo electricidad (o eso creo), hice pruebas con un amperimetro y se refleja un consumo muy similar al de un delay normal.
-
-####  NFC Funcional:
-- Se implementaron 2 modulos, para la gestion I2C y para el control del chip NFC, nuevamente hay un conflicto por uso de pines, ya que uno de los pines del NFC es usado tambien por el bus UART, por lo que no se puede usar uart y nfc al mismo tiempo, pero ya se puede escribir y borrar el chip NFC. Se deve tener mucho cuidado cuando se escribe el bloque 0 de la memoria, ya que es el que contiene la informacion del chip, por lo que si se escribe mal, el chip se puede quedar inutilizable, ya arruiné como 10 chips con eso, preferible no tocar ese sector.
-
-
-### ⚠️ Importante:
-Este proyecto está completamente basado en otro repositorio que encontré:
-[Echar un vistazo acá](https://github.com/andrei-tatar/imagotag-hack?tab=readme-ov-file)
-
-Quiero agradecer a @andrei-tatar por el trabajo que hizo, me ahorró mucho tiempo y esfuerzo y me inspiró a seguir adelante con esto, llevo... muchisimo tiempo investigando estos flejes, y gracias a su trabajo pude avanzar muchísimo.
-
-### 🔗 Más enlaces utiles
-- [Como controlar únicamente el Screen](https://blog.jirkabalhar.cz/2023/12/hacking-sesimagotag-e-ink-price-tag) (enlace al blog de @jirkabalhar, donde explica como controlar únicamente el screen del imagotag, fué el primer blog que encontré sobre esta marca, mi primer inspiración para crear este proyecto.)
+## 📄 Lizenz
+[MIT](./LICENSE) für die eigenen Beiträge, mit Hinweis auf das unlizenzierte Ur-Projekt. `tools/CCLib` behält seine eigene Lizenz.

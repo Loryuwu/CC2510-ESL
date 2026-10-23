@@ -1,0 +1,420 @@
+data: null
+background: white
+rotate: 0
+dither: 0
+ttl: 300
+dry-run: false
+payload:
+  # ===== HEADER BAR (rot) =====
+  - type: rectangle
+    x_start: 0
+    y_start: 0
+    x_end: 400
+    y_end: 40
+    fill: red
+
+  - type: text
+    value: '{{ now().strftime(''%H:%M'') }}'
+    x: 12
+    'y': 20
+    size: 30
+    font: ppb.ttf
+    color: white
+    anchor: lm
+
+  - type: text
+    value: >-
+      {{ ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][now().weekday()] }},
+      {{ now().strftime('%d.%m.%Y') }}
+    x: 392
+    'y': 20
+    size: 16
+    color: white
+    anchor: rm
+
+  # ===== AKTUELLE TEMPERATUR (gross) =====
+  - type: text
+    value: >-
+      {% set t = state_attr('weather.forecast_home','temperature') %}{{ (t | round | int) if t is not none else '--' }}°
+    x: 12
+    'y': 95
+    size: 72
+    font: ppb.ttf
+    color: black
+    anchor: lm
+
+  # ===== GEFUEHLT =====
+  - type: text
+    value: >-
+      {% set a = state_attr('weather.forecast_home','temperature') %}
+      {% set h = state_attr('weather.forecast_home','humidity') %}
+      {% set w = state_attr('weather.forecast_home','wind_speed') %}
+      {% if a is not none and h is not none and w is not none %}
+      Gefuehlt {{ (a | float * 0.7 + h | float * 0.03 - w | float * 0.15) | round | int }}°
+      {% else %}Gefuehlt --°{% endif %}
+    x: 12
+    'y': 132
+    size: 16
+    color: black
+    anchor: lm
+
+  # ===== WETTER-ICON (gross) =====
+  - type: icon
+    value: >-
+      {{
+      {'sunny':'weather-sunny','clear-night':'weather-night','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[states('weather.forecast_home')] | default('help-circle-outline') }}
+    x: 310
+    'y': 90
+    size: 96
+    color: black
+    anchor: mm
+
+  # ===== ZUSTAND (rot) =====
+  - type: text
+    value: >-
+      {{
+      {'sunny':'Sonnig','clear-night':'Klar','cloudy':'Bedeckt','partlycloudy':'Wolkig',
+       'rainy':'Regen','pouring':'Starkregen','snowy':'Schnee','snowy-rainy':'Schneeregen',
+       'fog':'Nebel','windy':'Windig','windy-variant':'Windig','hail':'Hagel',
+       'lightning':'Gewitter','lightning-rainy':'Gewitter','exceptional':'Extrem'
+      }[states('weather.forecast_home')] | default(states('weather.forecast_home')) }}
+    x: 12
+    'y': 155
+    size: 20
+    color: red
+    anchor: lm
+
+  # ===== TRENNLINIE =====
+  - type: line
+    x_start: 12
+    x_end: 388
+    y_start: 170
+    y_end: 170
+    fill: black
+    width: 1
+
+  # ===== DETAILS =====
+  - type: icon
+    value: water-percent
+    x: 12
+    'y': 186
+    size: 20
+    color: black
+    anchor: lm
+  - type: text
+    value: >-
+      {{ state_attr('weather.forecast_home','humidity') | default('--', true) }}%
+    x: 34
+    'y': 186
+    size: 16
+    color: black
+    anchor: lm
+
+  - type: icon
+    value: weather-windy
+    x: 120
+    'y': 186
+    size: 20
+    color: black
+    anchor: lm
+  - type: text
+    value: >-
+      {% set w = state_attr('weather.forecast_home','wind_speed') %}{{ (w | round | int) if w is not none else '--' }} km/h
+    x: 142
+    'y': 186
+    size: 16
+    color: black
+    anchor: lm
+
+  - type: icon
+    value: gauge
+    x: 270
+    'y': 186
+    size: 20
+    color: black
+    anchor: lm
+  - type: text
+    value: >-
+      {% set p = state_attr('weather.forecast_home','pressure') %}{{ (p | round | int) if p is not none else '--' }} hPa
+    x: 292
+    'y': 186
+    size: 16
+    color: black
+    anchor: lm
+
+  # ===== TRENNLINIE 2 =====
+  - type: line
+    x_start: 12
+    x_end: 388
+    y_start: 202
+    y_end: 202
+    fill: black
+    width: 1
+
+  # ===== 5-TAGE VORHERSAGE =====
+  # Spalten bei x = 40, 120, 200, 280, 360 (Mitte)
+
+  # --- Tag 1 (morgen) ---
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 0 %}{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][(fc[0].datetime | as_datetime | as_local).weekday()] }}{% else %}--{% endif %}
+    x: 40
+    'y': 216
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: icon
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 0 %}{{
+      {'sunny':'weather-sunny','clear-night':'weather-sunny','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[fc[0].condition] | default('help-circle-outline') }}{% else %}help-circle-outline{% endif %}
+    x: 40
+    'y': 252
+    size: 40
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 0 %}{{ fc[0].temperature | round | int }}°{% else %}--{% endif %}
+    x: 40
+    'y': 280
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 0 and fc[0].templow is defined %}{{ fc[0].templow | round | int }}°{% else %}--{% endif %}
+    x: 40
+    'y': 296
+    size: 14
+    color: red
+    anchor: mm
+
+  # --- Tag 2 ---
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 1 %}{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][(fc[1].datetime | as_datetime | as_local).weekday()] }}{% else %}--{% endif %}
+    x: 120
+    'y': 216
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: icon
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 1 %}{{
+      {'sunny':'weather-sunny','clear-night':'weather-sunny','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[fc[1].condition] | default('help-circle-outline') }}{% else %}help-circle-outline{% endif %}
+    x: 120
+    'y': 252
+    size: 40
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 1 %}{{ fc[1].temperature | round | int }}°{% else %}--{% endif %}
+    x: 120
+    'y': 280
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 1 and fc[1].templow is defined %}{{ fc[1].templow | round | int }}°{% else %}--{% endif %}
+    x: 120
+    'y': 296
+    size: 14
+    color: red
+    anchor: mm
+
+  # --- Tag 3 ---
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 2 %}{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][(fc[2].datetime | as_datetime | as_local).weekday()] }}{% else %}--{% endif %}
+    x: 200
+    'y': 216
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: icon
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 2 %}{{
+      {'sunny':'weather-sunny','clear-night':'weather-sunny','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[fc[2].condition] | default('help-circle-outline') }}{% else %}help-circle-outline{% endif %}
+    x: 200
+    'y': 252
+    size: 40
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 2 %}{{ fc[2].temperature | round | int }}°{% else %}--{% endif %}
+    x: 200
+    'y': 280
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 2 and fc[2].templow is defined %}{{ fc[2].templow | round | int }}°{% else %}--{% endif %}
+    x: 200
+    'y': 296
+    size: 14
+    color: red
+    anchor: mm
+
+  # --- Tag 4 ---
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 3 %}{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][(fc[3].datetime | as_datetime | as_local).weekday()] }}{% else %}--{% endif %}
+    x: 280
+    'y': 216
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: icon
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 3 %}{{
+      {'sunny':'weather-sunny','clear-night':'weather-sunny','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[fc[3].condition] | default('help-circle-outline') }}{% else %}help-circle-outline{% endif %}
+    x: 280
+    'y': 252
+    size: 40
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 3 %}{{ fc[3].temperature | round | int }}°{% else %}--{% endif %}
+    x: 280
+    'y': 280
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 3 and fc[3].templow is defined %}{{ fc[3].templow | round | int }}°{% else %}--{% endif %}
+    x: 280
+    'y': 296
+    size: 14
+    color: red
+    anchor: mm
+
+  # --- Tag 5 ---
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 4 %}{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][(fc[4].datetime | as_datetime | as_local).weekday()] }}{% else %}--{% endif %}
+    x: 360
+    'y': 216
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: icon
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 4 %}{{
+      {'sunny':'weather-sunny','clear-night':'weather-sunny','cloudy':'weather-cloudy',
+       'partlycloudy':'weather-partly-cloudy','rainy':'weather-rainy','pouring':'weather-pouring',
+       'snowy':'weather-snowy','snowy-rainy':'weather-snowy-rainy','fog':'weather-fog',
+       'windy':'weather-windy','windy-variant':'weather-windy-variant','hail':'weather-hail',
+       'lightning':'weather-lightning','lightning-rainy':'weather-lightning-rainy'
+      }[fc[4].condition] | default('help-circle-outline') }}{% else %}help-circle-outline{% endif %}
+    x: 360
+    'y': 252
+    size: 40
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 4 %}{{ fc[4].temperature | round | int }}°{% else %}--{% endif %}
+    x: 360
+    'y': 280
+    size: 16
+    font: ppb.ttf
+    color: black
+    anchor: mm
+  - type: text
+    value: >-
+      {% set fc = state_attr('sensor.owm_daily_forecast','days') %}
+      {% if fc and fc|length > 4 and fc[4].templow is defined %}{{ fc[4].templow | round | int }}°{% else %}--{% endif %}
+    x: 360
+    'y': 296
+    size: 14
+    color: red
+    anchor: mm
+
+  # ===== VERTIKALE TRENNLINIEN zwischen Vorhersage-Spalten =====
+  - type: line
+    x_start: 80
+    x_end: 80
+    y_start: 208
+    y_end: 298
+    fill: black
+    width: 1
+  - type: line
+    x_start: 160
+    x_end: 160
+    y_start: 208
+    y_end: 298
+    fill: black
+    width: 1
+  - type: line
+    x_start: 240
+    x_end: 240
+    y_start: 208
+    y_end: 298
+    fill: black
+    width: 1
+  - type: line
+    x_start: 320
+    x_end: 320
+    y_start: 208
+    y_end: 298
+    fill: black
+    width: 1

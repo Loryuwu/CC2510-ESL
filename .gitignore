@@ -1,0 +1,28 @@
+# SDCC / 8051 Build-Artefakte
+*.rel
+*.asm
+*.lst
+*.sym
+*.rst
+*.lk
+*.map
+*.mem
+*.ihx
+*.bin
+*.adb
+*.cdb
+*.omf
+
+# Python (cobs_test.py, CCLib)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Arduino/ESP32-Gateway: niemals echte Zugangsdaten committen
+gateway/**/secrets.h
+
+# Editor / OS
+.DS_Store
+*.swp
+*~

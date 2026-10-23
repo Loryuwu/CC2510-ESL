@@ -1,0 +1,113 @@
+# =============================================================================
+#  PriceTag - OpenEPaperLink Wetterdisplay (296x152 BWR)
+# -----------------------------------------------------------------------------
+#  Rendert in Home Assistant ein Wetterbild und schickt es per
+#  open_epaper_link.drawcustom an den Tag (ueber den PriceTag-OEPL-Shim).
+#
+#  WICHTIG: OEPL rendert die Payload-Templates mit HA-STATE-Kontext
+#  (states(), state_attr(), now()), ABER NICHT mit den Automations-`variables:`
+#  und NICHT mit response_variablen. Deshalb stehen hier UEBERALL literale
+#  Entity-IDs (`weather.forecast_home`) statt einer Variablen.
+#  -> Wenn deine Wetter-Entity anders heisst, `weather.forecast_home` in allen
+#     value/color-Templates ersetzen.
+#
+#  Hoch/Tief kommen aus den Template-Sensoren `sensor.pricetag_hoch/_tief`
+#  (optional, Definition in weather_forecast_sensors.yaml). Fehlen sie, zeigt
+#  das Display dort einfach `--`.
+# =============================================================================
+
+alias: PriceTag Wetter
+description: Wetter auf das OEPL-Preisschild rendern (weather.forecast_home)
+mode: single
+
+triggers:
+  - trigger: time_pattern
+    minutes: "/15"
+  - trigger: homeassistant
+    event: start
+
+actions:
+  - action: open_epaper_link.drawcustom
+    target:
+      device_id: d109e5612e1e7705c94759828bd71088   # <-- dein Tag-Geraet
+    data:
+      background: white
+      rotate: 0
+      dither: 2
+      ttl: 60
+      payload:
+        # --- Banner (rote Leiste): Ort links, Wochentag + Uhr rechts ---
+        - type: rectangle
+          x_start: 0
+          y_start: 0
+          x_end: 296
+          y_end: 28
+          fill: red
+          outline: red
+        - type: text
+          value: "Dortmund"                     # <-- Anzeigename im Banner
+          x: 6
+          y: 4
+          size: 20
+          color: white
+        - type: text
+          value: "{{ ['Mo','Di','Mi','Do','Fr','Sa','So'][now().weekday()] }} {{ now().strftime('%H:%M') }}"
+          x: 290
+          y: 4
+          size: 20
+          color: white
+          anchor: rt
+
+        # --- Grosse Temperatur (schwarz) ---
+        - type: text
+          value: "{% set t = state_attr('weather.forecast_home','temperature') %}{{ '%.0f'|format(t) if t is not none else '--' }}°C"
+          x: 6
+          y: 38
+          size: 46
+          color: black
+
+        # --- Zustand (rot) ---
+        - type: text
+          value: "{% set c = states('weather.forecast_home') %}{% set m = {'sunny':'Klar','clear-night':'Klar','partlycloudy':'Heiter','cloudy':'Bewölkt','fog':'Nebel','rainy':'Regen','pouring':'Starkregen','snowy':'Schnee','snowy-rainy':'Schneeregen','lightning':'Gewitter','lightning-rainy':'Gewitter','hail':'Hagel','windy':'Windig','windy-variant':'Windig','exceptional':'Extrem'} %}{{ m.get(c, c) }}"
+          x: 6
+          y: 100
+          size: 24
+          color: red
+
+        # --- Gefuehlt (klein) - faellt weg, wenn die Entity es nicht liefert ---
+        - type: text
+          value: "{% set a = state_attr('weather.forecast_home','apparent_temperature') %}{{ ('gefühlt ' ~ (a|round(0)|int) ~ '°') if a is not none else '' }}"
+          x: 6
+          y: 132
+          size: 16
+          color: black
+
+        # --- Wetter-Icon oben rechts (Sonne/Nacht rot, sonst schwarz) ---
+        - type: icon
+          value: "{% set c = states('weather.forecast_home') %}{% set m = {'sunny':'mdi:weather-sunny','clear-night':'mdi:weather-night','partlycloudy':'mdi:weather-partly-cloudy','cloudy':'mdi:weather-cloudy','fog':'mdi:weather-fog','rainy':'mdi:weather-rainy','pouring':'mdi:weather-pouring','snowy':'mdi:weather-snowy','snowy-rainy':'mdi:weather-snowy-rainy','lightning':'mdi:weather-lightning','lightning-rainy':'mdi:weather-lightning-rainy','hail':'mdi:weather-hail','windy':'mdi:weather-windy','windy-variant':'mdi:weather-windy-variant','exceptional':'mdi:weather-cloudy-alert'} %}{{ m.get(c, 'mdi:weather-cloudy') }}"
+          x: 236
+          y: 38
+          size: 54
+          color: "{% set c = states('weather.forecast_home') %}{{ 'red' if c in ['sunny','clear-night'] else 'black' }}"
+
+        # --- Rechte Spalte: Hoch / Tief (aus den Template-Sensoren, optional) ---
+        - type: text
+          value: "H {% set v = states('sensor.pricetag_hoch')|float(-999) %}{{ (v|round(0)|int) if v > -900 else '--' }}°"
+          x: 182
+          y: 86
+          size: 18
+          color: black
+        - type: text
+          value: "T {% set v = states('sensor.pricetag_tief')|float(-999) %}{{ (v|round(0)|int) if v > -900 else '--' }}°"
+          x: 182
+          y: 108
+          size: 18
+          color: black
+
+        # --- Feuchte + Wind ---
+        - type: text
+          value: "{% set h = state_attr('weather.forecast_home','humidity') %}{% set w = state_attr('weather.forecast_home','wind_speed') %}{{ (h|int) if h is not none else '--' }}%  {{ (w|round(0)|int) if w is not none else '--' }} km/h"
+          x: 182
+          y: 132
+          size: 16
+          color: black

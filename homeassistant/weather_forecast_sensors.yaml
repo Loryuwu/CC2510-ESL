@@ -1,0 +1,42 @@
+# =============================================================================
+#  Template-Sensoren: heutiges Hoch/Tief aus der Tages-Vorhersage
+# -----------------------------------------------------------------------------
+#  Warum: OEPL rendert die drawcustom-Payload nur mit HA-STATE-Kontext. Eine
+#  response_variable (fc aus weather.get_forecasts) ist dort NICHT sichtbar.
+#  Loesung: diese trigger-basierten Template-Sensoren holen die Vorhersage und
+#  stellen Hoch/Tief als normale States bereit -> das Display liest sie per
+#  states('sensor.pricetag_hoch') / ...('sensor.pricetag_tief').
+#
+#  Einbauen: in configuration.yaml einfuegen (oder als Package). Danach HA
+#  neu starten / "YAML neu laden -> Template-Entities". Wetter-Entity ggf.
+#  von weather.forecast_home auf deine aendern.
+# =============================================================================
+
+template:
+  - trigger:
+      - trigger: time_pattern
+        minutes: "/15"
+      - trigger: homeassistant
+        event: start
+    action:
+      - action: weather.get_forecasts
+        data:
+          type: daily
+        target:
+          entity_id: weather.forecast_home
+        response_variable: fc
+    sensor:
+      - name: PriceTag Hoch
+        unique_id: pricetag_hoch
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state: >-
+          {% set f = fc['weather.forecast_home'].forecast if fc is defined else none %}
+          {{ f[0].temperature if f and f|length > 0 else none }}
+      - name: PriceTag Tief
+        unique_id: pricetag_tief
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state: >-
+          {% set f = fc['weather.forecast_home'].forecast if fc is defined else none %}
+          {{ f[0].templow if f and f|length > 0 else none }}
